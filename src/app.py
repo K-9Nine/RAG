@@ -153,3 +153,15 @@ async def load_documents(documents: List[Document]):
         return {"status": "success", "message": f"Added {len(documents)} documents"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring"""
+    try:
+        # Check Weaviate connection
+        doc_processor.client.schema.get()
+        # Check OpenAI connection
+        client.models.list()
+        return {"status": "healthy", "message": "All services operational"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Health check failed: {str(e)}")
