@@ -1,9 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from openai import OpenAI
+import openai
 from .config import settings
 import json
 from datetime import datetime
@@ -11,9 +11,11 @@ import os
 from .utils.document_processor import DocumentProcessor
 from .utils.context_manager import ContextManager
 from typing import List, Dict, Optional
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+import secrets
 
 # Initialize the client
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+openai.api_key = settings.OPENAI_API_KEY
 
 app = FastAPI()
 
@@ -25,6 +27,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+security = HTTPBasic()
+
+def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_username = "testuser"
+    correct_password = "testpass123"
+    is_correct_username = secrets.compare_digest(credentials.username.encode("utf8"), correct_username.encode("utf8"))
+    is_correct_password = secrets.compare_digest(credentials.password.encode("utf8"), correct_password.encode("utf8"))
+    
+    if not (is_correct_username and is_correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
 
 class ChatMessage(BaseModel):
     message: str
@@ -40,11 +58,11 @@ SYSTEM_PROMPT = """You are an IT Support Assistant. Your role is to:
 Knowledge base context will be provided in subsequent messages if relevant."""
 
 # Near the top after loading environment variables
-print(f"API Key loaded: {'YES' if client.api_key else 'NO'}")
+print(f"API Key loaded: {'YES' if openai.api_key else 'NO'}")
 
 # Mount static files AFTER defining API routes
 @app.get("/")
-async def root():
+async def root(username: str = Depends(verify_credentials)):
     return FileResponse('static/index.html')
 
 @app.get("/api/test")
@@ -56,7 +74,7 @@ doc_processor = DocumentProcessor(collection_name=settings.COLLECTION_NAME)
 context_manager = ContextManager(doc_processor)
 
 @app.post("/api/chat")
-async def chat(chat_message: ChatMessage):
+async def chat(chat_message: ChatMessage, username: str = Depends(verify_credentials)):
     try:
         print("\n=== Starting new chat request ===")
         print(f"User message: {chat_message.message}")
@@ -80,7 +98,7 @@ async def chat(chat_message: ChatMessage):
         print("Messages to send:", messages)
         
         try:
-            response = client.chat.completions.create(
+            response = openai.ChatCompletion.create(
                 model=settings.MODEL_NAME,
                 messages=messages,
                 temperature=settings.TEMPERATURE,
@@ -132,7 +150,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/api/test-openai")
 async def test_openai():
     try:
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": "Say hello"}],
             max_tokens=10
@@ -161,7 +179,7 @@ async def health_check():
         # Check Weaviate connection
         doc_processor.client.schema.get()
         # Check OpenAI connection
-        client.models.list()
+        openai.models.list()
         return {"status": "healthy", "message": "All services operational"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Health check failed: {str(e)}")
