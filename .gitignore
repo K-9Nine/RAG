@@ -3,3 +3,4 @@ __pycache__/
 logs/
 *.pyc
 .DS_Store
+installed_packages.txt
