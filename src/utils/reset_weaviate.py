@@ -3,21 +3,22 @@ import os
 import time
 
 # Print the URL being used
-weaviate_url = os.getenv("WEAVIATE_URL", "http://weaviate:8080")
+weaviate_url = os.getenv("WEAVIATE_URL", "http://localhost:8087")
 print(f"Connecting to Weaviate at: {weaviate_url}")
 
 # Try to connect with retries
 max_retries = 5
-retry_delay = 2
+retry_delay = 5
 
 for attempt in range(max_retries):
     try:
+        print(f"\nAttempt {attempt + 1}/{max_retries} to connect to Weaviate...")
+        
         client = weaviate.Client(
             url=weaviate_url,
             additional_headers={
                 "X-OpenAI-Api-Key": os.getenv("OPENAI_API_KEY")
-            },
-            timeout_config=(5, 15)  # (connect timeout, read timeout)
+            }
         )
         
         # Test connection
@@ -40,7 +41,7 @@ try:
 except Exception as e:
     print(f"Error deleting schema: {str(e)}")
 
-# Create schema
+# Define the schema
 class_obj = {
     "class": "SupportDocs",
     "vectorizer": "text2vec-openai",
@@ -74,8 +75,22 @@ class_obj = {
     ]
 }
 
+# Create the schema
 try:
     client.schema.create_class(class_obj)
     print("Schema created successfully")
 except Exception as e:
     print(f"Error creating schema: {str(e)}")
+
+# Verify the documents were added
+try:
+    result = client.query.get("SupportDocs").do()
+    print(f"\nVerification - Found {len(result['data']['Get']['SupportDocs'])} documents in Weaviate")
+    
+    # Print first few documents as a sample
+    print("\nSample documents:")
+    for doc in result['data']['Get']['SupportDocs'][:3]:  # Show first 3 docs
+        print(f"\nContent: {doc['content'][:100]}...")  # Show first 100 chars of content
+        print(f"Metadata: {doc['metadata']}")
+except Exception as e:
+    print(f"Error verifying documents: {str(e)}")

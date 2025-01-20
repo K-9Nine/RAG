@@ -49,13 +49,14 @@ class ChatMessage(BaseModel):
     user_id: str
     chat_history: list = []
 
-SYSTEM_PROMPT = """You are an IT Support Assistant. Your role is to:
-1. Help users troubleshoot technical issues
-2. Provide clear, step-by-step solutions
-3. If you're not completely sure about an answer, say so and recommend escalating to human support
-4. Keep responses concise and focused
+SYSTEM_PROMPT = """You are an IT Support Assistant with expertise in CallSwitch One and related systems. Your role is to:
+1. Provide accurate information from the knowledge base
+2. Give clear, step-by-step explanations when needed
+3. If information isn't in the context, say so and suggest contacting support
+4. Keep responses focused and well-structured
+5. Use bullet points or numbered lists for complex information
 
-Knowledge base context will be provided in subsequent messages if relevant."""
+Base your responses primarily on the provided context rather than general knowledge."""
 
 # Near the top after loading environment variables
 print(f"API Key loaded: {'YES' if openai.api_key else 'NO'}")
@@ -85,19 +86,19 @@ async def chat(chat_message: ChatMessage, username: str = Depends(verify_credent
                 chat_message.message, 
                 SYSTEM_PROMPT
             )
-            print(f"Enhanced prompt: {enhanced_prompt}")
-        except Exception as context_error:
-            print(f"Error getting context: {str(context_error)}")
-            raise HTTPException(status_code=500, detail=f"Context error: {str(context_error)}")
-        
-        messages = [{"role": "system", "content": enhanced_prompt}]
-        for hist in chat_message.chat_history[-5:]:
-            messages.append({"role": hist["role"], "content": hist["content"]})
-        messages.append({"role": "user", "content": chat_message.message})
-        
-        print("Messages to send:", messages)
-        
-        try:
+            print(f"\nEnhanced prompt with context:")
+            print("=" * 50)
+            print(enhanced_prompt)
+            print("=" * 50)
+            
+            messages = [{"role": "system", "content": enhanced_prompt}]
+            for hist in chat_message.chat_history[-5:]:
+                messages.append({"role": hist["role"], "content": hist["content"]})
+            messages.append({"role": "user", "content": chat_message.message})
+            
+            print("\nFull message list to OpenAI:")
+            print(json.dumps(messages, indent=2))
+            
             response = openai.ChatCompletion.create(
                 model=settings.MODEL_NAME,
                 messages=messages,
@@ -106,22 +107,17 @@ async def chat(chat_message: ChatMessage, username: str = Depends(verify_credent
             )
             
             ai_response = response.choices[0].message.content
-            print("Got OpenAI response:", ai_response)
-            
-            if not ai_response:
-                raise ValueError("Empty response from OpenAI")
-            
-            # Log the chat
-            log_chat(chat_message.user_id, chat_message.message, ai_response)
+            print("\nOpenAI response:")
+            print(ai_response)
             
             return {"response": ai_response}
             
-        except Exception as api_error:
-            print(f"OpenAI API error details: {type(api_error).__name__}: {str(api_error)}")
-            raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(api_error)}")
+        except Exception as e:
+            print(f"Error in chat processing: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
             
     except Exception as e:
-        print(f"General error in chat endpoint: {type(e).__name__}: {str(e)}")
+        print(f"General error in chat endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 def log_chat(user_id: str, question: str, answer: str):

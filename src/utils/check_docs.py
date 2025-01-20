@@ -1,6 +1,9 @@
 import weaviate
 import os
 import time
+import json
+from src.utils.document_processor import DocumentProcessor
+from src.utils.context_manager import ContextManager
 
 # Print the URL being used
 weaviate_url = os.getenv("WEAVIATE_URL", "http://weaviate:8080")
@@ -12,12 +15,13 @@ retry_delay = 2
 
 for attempt in range(max_retries):
     try:
-        client = weaviate.Client(
-            url=weaviate_url,
-            additional_headers={
-                "X-OpenAI-Api-Key": os.getenv("OPENAI_API_KEY")
-            },
-            timeout_config=(5, 15)  # (connect timeout, read timeout)
+        client = weaviate.WeaviateClient(
+            connection_params=weaviate.connect.ConnectionParams.from_url(
+                url=weaviate_url,
+                headers={
+                    "X-OpenAI-Api-Key": os.getenv("OPENAI_API_KEY")
+                }
+            )
         )
         
         # Test connection
@@ -40,3 +44,27 @@ try:
     print(f"Number of documents in database: {count}")
 except Exception as e:
     print(f"Error checking documents: {str(e)}")
+
+def check_docs():
+    processor = DocumentProcessor()
+    context_manager = ContextManager(processor)
+    
+    query = "what is callswitch one"
+    
+    # Check raw documents
+    print("\nChecking direct document retrieval:")
+    docs = processor.query_documents(query, n_results=3)
+    print(json.dumps(docs, indent=2))
+    
+    # Check context generation
+    print("\nChecking context generation:")
+    context = context_manager.get_context(query)
+    print(context)
+    
+    # Check full prompt
+    print("\nChecking enhanced prompt:")
+    enhanced = context_manager.enhance_prompt(query, "You are an assistant.")
+    print(enhanced)
+
+if __name__ == "__main__":
+    check_docs()

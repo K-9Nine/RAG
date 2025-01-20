@@ -1,5 +1,6 @@
 import requests
 import json
+import sys
 
 # Example documents with pre-serialized metadata
 documents = [
@@ -1388,11 +1389,22 @@ documents = [
 ]
 
 def load_test_documents():
-    response = requests.post(
-        "http://localhost:8000/api/load-documents",
-        json=documents
-    )
-    print(response.json())
+    try:
+        response = requests.post(
+            "http://localhost:8088/api/load-documents",  # Updated to correct port
+            json=documents
+        )
+        print(f"Status code: {response.status_code}")
+        print("Response:", response.json())
+        return response.status_code == 200
+    except requests.exceptions.RequestException as e:
+        print(f"Error making request: {e}")
+        return False
+    except json.JSONDecodeError as e:
+        print(f"Error decoding response: {e}")
+        return False
 
 if __name__ == "__main__":
-    load_test_documents() 
+    success = load_test_documents()
+    if not success:
+        sys.exit(1) 

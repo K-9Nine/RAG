@@ -1,6 +1,6 @@
 import weaviate
 from typing import List, Dict
-from ..config import settings
+from src.config import settings
 import json
 import uuid
 
@@ -8,11 +8,13 @@ class DocumentProcessor:
     def __init__(self, collection_name: str = "SupportDocs"):
         print(f"Initializing Weaviate client with URL: {settings.WEAVIATE_URL}")
         
-        self.client = weaviate.Client(
-            url=settings.WEAVIATE_URL,
-            additional_headers={
-                "X-OpenAI-Api-Key": settings.OPENAI_API_KEY
-            }
+        self.client = weaviate.WeaviateClient(
+            connection_params=weaviate.connect.ConnectionParams.from_url(
+                url=settings.WEAVIATE_URL,
+                headers={
+                    "X-OpenAI-Api-Key": settings.OPENAI_API_KEY
+                }
+            )
         )
         self.collection_name = collection_name
         
@@ -45,7 +47,7 @@ class DocumentProcessor:
         }
         
         try:
-            self.client.schema.create_class(schema)
+            self.client.schema.create(schema)
             print(f"Created schema for collection: {self.collection_name}")
         except Exception as e:
             print(f"Schema creation error (might already exist): {str(e)}")
@@ -69,9 +71,9 @@ class DocumentProcessor:
                 # Generate a UUID based on content
                 doc_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, doc['content']))
                 
-                batch.add_data_object(
-                    data_object=properties,
-                    class_name=self.collection_name,
+                batch.add_object(
+                    collection=self.collection_name,
+                    properties=properties,
                     uuid=doc_id
                 )
 
@@ -79,23 +81,19 @@ class DocumentProcessor:
         """Query Weaviate for relevant documents"""
         print(f"Querying Weaviate with: {query}")
         try:
-            vector_query = {
-                "concepts": [query]
-            }
-            
-            result = (
+            response = (
                 self.client.query
                 .get(self.collection_name, ["content", "docType", "category"])
-                .with_near_text(vector_query)
+                .with_near_text({"concepts": [query]})
                 .with_limit(n_results)
                 .do()
             )
             
-            print(f"Weaviate response: {json.dumps(result, indent=2)}")
+            print(f"Weaviate response: {json.dumps(response, indent=2)}")
             
             documents = []
-            if result and "data" in result and "Get" in result["data"]:
-                results = result["data"]["Get"][self.collection_name]
+            if response and "data" in response and "Get" in response["data"]:
+                results = response["data"]["Get"][self.collection_name]
                 for r in results:
                     documents.append({
                         'content': r['content'],
