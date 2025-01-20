@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -13,11 +13,30 @@ from .utils.context_manager import ContextManager
 from typing import List, Dict, Optional
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import secrets
+import weaviate
+from pathlib import Path
+from openai import OpenAI
+import httpx
 
-# Initialize the client
-openai.api_key = settings.OPENAI_API_KEY
-
+# Initialize FastAPI app first
 app = FastAPI()
+
+# Initialize OpenAI client with basic configuration
+openai_client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    http_client=httpx.Client()  # Use basic httpx client without proxies
+)
+
+# Print configuration
+print("=== App Configuration ===")
+print(f"OpenAI API Key present: {'YES' if os.getenv('OPENAI_API_KEY') else 'NO'}")
+print(f"Weaviate URL: {os.getenv('WEAVIATE_URL', 'http://weaviate:8080')}")
+
+# Create and mount static directory
+static_dir = Path(__file__).parent.parent / "static"
+if not static_dir.exists():
+    static_dir.mkdir(parents=True)
+app.mount("/static", StaticFiles(directory=str(static_dir.absolute())), name="static")
 
 # Enable CORS
 app.add_middleware(
@@ -140,9 +159,6 @@ def log_chat(user_id: str, question: str, answer: str):
     except Exception as e:
         print(f"Logging error: {str(e)}")
 
-# Mount static files for other static content (CSS, JS, etc)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
 @app.get("/api/test-openai")
 async def test_openai():
     try:
@@ -179,3 +195,224 @@ async def health_check():
         return {"status": "healthy", "message": "All services operational"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Health check failed: {str(e)}")
+
+@app.get("/count")
+async def get_count() -> Dict[str, Optional[int]]:
+    try:
+        client = weaviate.Client(
+            url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
+        )
+        
+        result = (
+            client.query
+            .aggregate("SupportDocs")
+            .with_meta_count()
+            .do()
+        )
+        
+        if result and 'data' in result and 'Aggregate' in result['data'] and 'SupportDocs' in result['data']['Aggregate']:
+            count = result['data']['Aggregate']['SupportDocs'][0]['meta']['count']
+            return {"count": count}
+        return {"count": None}
+        
+    except Exception as e:
+        print(f"Count error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/raw_search/")  # Note the trailing slash
+async def raw_search(
+    query: str = Query(..., description="Search query"),
+    category: str = Query(default="phone", description="Category to search in"),
+    limit: int = Query(default=5, description="Maximum number of results")
+):
+    """Debug endpoint to see raw Weaviate search results"""
+    try:
+        client = weaviate.Client(
+            url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
+        )
+        
+        print(f"Executing raw search for: {query} in category: {category}")
+        
+        result = (
+            client.query
+            .get("SupportDocs", ["content", "metadata", "category"])
+            .with_where({
+                "path": ["category"],
+                "operator": "Equal",
+                "valueString": category
+            })
+            .with_near_text({
+                "concepts": [query]
+            })
+            .with_additional(["distance"])
+            .with_limit(limit)
+            .do()
+        )
+        
+        print(f"Raw search result: {result}")
+        return result
+        
+    except Exception as e:
+        print(f"Raw search error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/search/")
+async def search_docs(
+    query: str = Query(..., description="Search query"),
+    category: str = Query(default="phone", description="Category to search in"),
+    limit: int = Query(default=5, description="Maximum number of results")
+) -> Dict:
+    """Main search endpoint with RAG"""
+    try:
+        client = weaviate.Client(
+            url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
+        )
+        
+        print(f"\nProcessing search: '{query}' in category: {category}")
+        
+        result = (
+            client.query
+            .get("SupportDocs", ["content", "metadata", "category"])
+            .with_where({
+                "path": ["category"],
+                "operator": "Equal",
+                "valueString": category
+            })
+            .with_near_text({
+                "concepts": [query]
+            })
+            .with_additional(["distance"])
+            .with_limit(limit)
+            .do()
+        )
+        
+        print(f"\nSearch result: {result}")
+        
+        if result and 'data' in result and 'Get' in result['data'] and 'SupportDocs' in result['data']['Get']:
+            docs = result['data']['Get']['SupportDocs']
+            
+            if not docs:
+                return {
+                    "query": query,
+                    "category": category,
+                    "response": "I couldn't find any relevant information. Could you please rephrase your question?",
+                    "results": []
+                }
+            
+            # Format context for RAG
+            contexts = []
+            for doc in docs:
+                distance = doc.get('_additional', {}).get('distance', 1.0)
+                confidence = 1 - distance
+                contexts.append({
+                    'content': doc['content'],
+                    'confidence': f"{confidence:.1%}",
+                    'metadata': doc.get('metadata', '')
+                })
+            
+            context_text = "\n\n".join([
+                f"[{ctx['metadata']} - Confidence: {ctx['confidence']}]\n{ctx['content']}"
+                for ctx in contexts
+            ])
+            
+            system_prompt = """You are a helpful phone system support assistant. Using the retrieved documentation:
+            1. Provide clear, step-by-step instructions
+            2. Include all relevant details from the documentation
+            3. Use a friendly, professional tone
+            4. If multiple methods exist, present all options
+            5. Reference specific menus and options as mentioned in the docs"""
+            
+            user_prompt = f"""Based on these relevant documents:
+
+{context_text}
+
+Please help the user with their query: "{query}"
+Format the response in a clear, easy-to-follow way."""
+            
+            try:
+                # Make OpenAI API call
+                response = openai_client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=500
+                )
+                
+                ai_response = response.choices[0].message.content
+                
+            except Exception as e:
+                print(f"OpenAI API error: {str(e)}")
+                ai_response = "I found relevant information but had trouble generating a response. Here's the raw information:\n\n" + context_text
+            
+            return {
+                "query": query,
+                "category": category,
+                "response": ai_response,
+                "results": contexts
+            }
+            
+        return {
+            "query": query,
+            "category": category,
+            "response": "I couldn't find any relevant information. Could you please rephrase your question?",
+            "results": []
+        }
+            
+    except Exception as e:
+        print(f"Search error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/categories")
+async def get_categories():
+    """Get available categories"""
+    return {
+        "categories": [
+            {
+                "id": "phone",
+                "name": "Phone System",
+                "description": "CallSwitch phone system support"
+            },
+            {
+                "id": "fibre",
+                "name": "Fibre Leased Line",
+                "description": "Dedicated fibre connection support"
+            },
+            {
+                "id": "broadband",
+                "name": "Broadband",
+                "description": "FTTC and FTTP broadband support"
+            },
+            {
+                "id": "email",
+                "name": "Microsoft Email",
+                "description": "Microsoft 365 and Teams support"
+            }
+        ]
+    }
+
+@app.get("/schema")
+async def get_schema():
+    try:
+        client = weaviate.Client(
+            url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
+        )
+        
+        schema = client.schema.get()
+        return {"schema": schema}
+        
+    except Exception as e:
+        print(f"Error getting schema: {str(e)}")
+        return {"error": str(e)}
+
+# Debug print when all routes are registered
+print("\n=== Available Routes ===")
+for route in app.routes:
+    if hasattr(route, "methods"):  # Regular routes
+        print(f"{route.methods} {route.path}")
+    elif isinstance(route, StaticFiles):  # Static file mounts
+        print(f"STATIC {route.directory} -> {route.path}")
+    else:  # Other types of routes
+        print(f"OTHER {route.path}")
