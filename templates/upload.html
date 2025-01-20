@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .upload-form {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        
+        textarea {
+            height: 150px;
+            resize: vertical;
+        }
+        
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #1976D2;
+        }
+        
+        .preview {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .success-message {
+            background: #C8E6C9;
+            color: #2E7D32;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .error-message {
+            background: #FFCDD2;
+            color: #C62828;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload Support Document</h1>
+    
+    <div class="upload-form">
+        <div class="form-group">
+            <label for="category">Category:</label>
+            <select id="category" required>
+                {% for category in categories %}
+                <option value="{{ category }}">{{ category|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="content">Document Content:</label>
+            <textarea id="content" placeholder="Enter the document content..." required></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="metadata">Metadata (e.g., 'password management', 'voicemail setup'):</label>
+            <input type="text" id="metadata" placeholder="Enter metadata..." required>
+        </div>
+        
+        <button onclick="previewDocument()">Preview</button>
+        <button onclick="uploadDocument()">Upload</button>
+    </div>
+    
+    <div class="preview" id="preview">
+        <h3>Preview:</h3>
+        <p><strong>Category:</strong> <span id="previewCategory"></span></p>
+        <p><strong>Metadata:</strong> <span id="previewMetadata"></span></p>
+        <p><strong>Content:</strong></p>
+        <p id="previewContent"></p>
+    </div>
+    
+    <div class="success-message" id="successMessage">
+        Document uploaded successfully!
+    </div>
+    
+    <div class="error-message" id="errorMessage"></div>
+    
+    <script>
+        function previewDocument() {
+            const preview = document.getElementById('preview');
+            const category = document.getElementById('category').value;
+            const content = document.getElementById('content').value;
+            const metadata = document.getElementById('metadata').value;
+            
+            document.getElementById('previewCategory').textContent = category;
+            document.getElementById('previewMetadata').textContent = metadata;
+            document.getElementById('previewContent').textContent = content;
+            
+            preview.style.display = 'block';
+        }
+        
+        async function uploadDocument() {
+            const category = document.getElementById('category').value;
+            const content = document.getElementById('content').value;
+            const metadata = document.getElementById('metadata').value;
+            
+            const successMessage = document.getElementById('successMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        category: category,
+                        content: content,
+                        metadata: metadata
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    successMessage.style.display = 'block';
+                    errorMessage.style.display = 'none';
+                    document.getElementById('content').value = '';
+                    document.getElementById('metadata').value = '';
+                    document.getElementById('preview').style.display = 'none';
+                } else {
+                    throw new Error(result.detail || 'Upload failed');
+                }
+            } catch (error) {
+                errorMessage.textContent = error.message;
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

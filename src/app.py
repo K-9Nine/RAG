@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, status, Query
+from fastapi import FastAPI, HTTPException, Depends, status, Query, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -8,7 +8,7 @@ from .config import settings
 import json
 from datetime import datetime
 import os
-from .utils.document_processor import DocumentProcessor
+from .utils.document_processor import DocumentProcessor, Category
 from .utils.context_manager import ContextManager
 from typing import List, Dict, Optional
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -17,6 +17,7 @@ import weaviate
 from pathlib import Path
 from openai import OpenAI
 import httpx
+from fastapi.templating import Jinja2Templates
 
 # Initialize FastAPI app first
 app = FastAPI()
@@ -94,7 +95,7 @@ doc_processor = DocumentProcessor(collection_name=settings.COLLECTION_NAME)
 context_manager = ContextManager(doc_processor)
 
 @app.post("/api/chat")
-async def chat(chat_message: ChatMessage, username: str = Depends(verify_credentials)):
+async def chat(chat_message: ChatMessage, username: str = Depends(verify_call_credentials)):
     try:
         print("\n=== Starting new chat request ===")
         print(f"User message: {chat_message.message}")
@@ -416,3 +417,40 @@ for route in app.routes:
         print(f"STATIC {route.directory} -> {route.path}")
     else:  # Other types of routes
         print(f"OTHER {route.path}")
+
+# Add templates configuration
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/upload")
+async def upload_page(request: Request):
+    """Render the document upload page"""
+    return templates.TemplateResponse(
+        "upload.html", 
+        {
+            "request": request,
+            "categories": [category.value for category in Category]
+        }
+    )
+
+@app.post("/upload")
+async def upload_document(
+    content: str = Form(...),
+    metadata: str = Form(...),
+    category: str = Form(...),
+):
+    """Process and upload a document"""
+    try:
+        processor = DocumentProcessor()
+        result = processor.process_document(
+            content=content,
+            metadata=metadata,
+            category=Category(category)
+        )
+        
+        if result:
+            return {"status": "success", "message": "Document uploaded successfully"}
+        else:
+            raise HTTPException(status_code=400, detail="Failed to process document")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
