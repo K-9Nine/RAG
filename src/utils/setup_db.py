@@ -1,6 +1,10 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
 import weaviate
 import time
-import os
+from src.utils.document_processor import DocumentProcessor, Category
 
 def setup_database():
     print("Connecting to Weaviate...")
@@ -132,20 +136,85 @@ def setup_database():
             "content": "Microsoft Teams is included with your Microsoft 365 subscription. Download Teams from teams.microsoft.com, sign in with your email, and you can start collaborating with video calls, chat, and file sharing.",
             "category": "email",
             "metadata": "teams setup"
-        }
+        },
+        # Additional Phone System docs
+        {
+            "content": "To set up call recording, log into the CallSwitch portal and navigate to User Settings > Recording. You can enable automatic recording for all calls or set up on-demand recording by pressing *1 during a call.",
+            "category": "phone",
+            "metadata": "call recording"
+        },
+        {
+            "content": "To access your voicemail remotely: 1. Dial your direct number 2. Press * during the greeting 3. Enter your PIN when prompted. You can then press 1 to listen to messages, 2 to change your greeting, or 3 to change your PIN.",
+            "category": "phone",
+            "metadata": "voicemail access"
+        },
+        {
+            "content": "Setting up your desk phone: 1. Connect the phone to your network (PoE or power adapter) 2. The phone will automatically download its configuration 3. Log in with your extension and PIN 4. Your name and extension will appear on the display when ready.",
+            "category": "phone",
+            "metadata": "phone setup"
+        },
+        {
+            "content": "Mobile app setup: 1. Download 'CallSwitch Mobile' from your app store 2. Open the app and enter your extension@company.com 3. Enter your CallSwitch password 4. Allow notifications for incoming calls 5. Configure mobile data and WiFi settings in the app.",
+            "category": "phone",
+            "metadata": "mobile setup"
+        },
+        {
+            "content": "To transfer a call: 1. Blind Transfer: Press Transfer + Number + Transfer 2. Attended Transfer: Press Transfer + Number, wait for answer, then Transfer 3. To voicemail: Press Transfer + * + Extension + Transfer.",
+            "category": "phone",
+            "metadata": "call transfer"
+        },
+        {
+            "content": "Hunt Group settings can be modified in the CallSwitch portal under Admin > Hunt Groups. You can set ring patterns (simultaneous or sequential), add/remove members, set overflow rules, and configure voicemail options.",
+            "category": "phone",
+            "metadata": "hunt groups"
+        },
+        {
+            "content": "Auto Attendant configuration: Access Admin > Auto Attendant to set up menu options, record greetings, set business hours routing, and configure holiday schedules. Each menu option can route to extensions, hunt groups, or external numbers.",
+            "category": "phone",
+            "metadata": "auto attendant"
+        },
+        {
+            "content": "Call Queue Management: 1. Log into CallSwitch portal 2. Go to Admin > Call Queues 3. Configure max queue size, timeout settings, and comfort messages 4. Add/remove agents 5. Set up overflow rules for busy periods.",
+            "category": "phone",
+            "metadata": "call queues"
+        },
+        {
+            "content": "To set up call screening: 1. Log into CallSwitch portal 2. Go to User Settings > Screening 3. Choose to accept, reject, or send to voicemail for: anonymous calls, known contacts, or specific numbers.",
+            "category": "phone",
+            "metadata": "call screening"
+        },
+        {
+            "content": "Busy Lamp Field (BLF) setup: 1. Log into portal 2. Go to User Settings > Phone 3. Select programmable keys 4. Assign extensions to BLF keys 5. Save and wait for phone to reboot. Keys will show colleague's status.",
+            "category": "phone",
+            "metadata": "BLF configuration"
+        },
+        # CallSwitch One Line Key Documents
+        {
+            "content": "CallSwitch One Line Key Overview: Users can manage desk phone line keys through CallSwitch One application. Supports BLF (Busy Lamp Field), Speed Dial, and Short Codes customization.",
+            "category": "phone",
+            "metadata": '{"type": "voip", "category": "features", "device": "callswitch", "subcategory": "line-keys"}'
+        },
+        {
+            "content": "CallSwitch Line Key Access: 1) Open CallSwitch One Application 2) Navigate to Settings Cog 3) Select Line Key Configuration",
+            "category": "phone",
+            "metadata": '{"type": "voip", "category": "access", "device": "callswitch", "subcategory": "line-keys"}'
+        },
+        {
+            "content": "CallSwitch BLF Setup: Under Line Key Configuration, select BLF as Key Type. Enter extension number as Value. For Contact Tab selection, choose from list of CallSwitch One users within organization.",
+            "metadata": '{"type": "voip", "category": "configuration", "device": "callswitch", "subcategory": "blf"}'
+        },
+        {
+            "content": "CallSwitch Speed Dial Configuration: Select Speed Dial as Key Type. Enter Label (name) and Value (phone number). Use Custom Tab for manual entry of external numbers.",
+            "metadata": '{"type": "voip", "category": "configuration", "device": "callswitch", "subcategory": "speed-dial"}'
+        },
+        {
+            "content": "CallSwitch Short Codes: Configure Short Code keys using administrator-provided commands. Access via Short Code Tab in Line Key Configuration. Select command to assign to key.",
+            "metadata": '{"type": "voip", "category": "configuration", "device": "callswitch", "subcategory": "short-codes"}'
+        },
     ]
 
-    with client.batch as batch:
-        batch.batch_size = len(test_docs)
-        for doc in test_docs:
-            print(f"Adding document: {doc['metadata']} ({doc['category']})")
-            try:
-                batch.add_data_object(
-                    data_object=doc,
-                    class_name="SupportDocs"
-                )
-            except Exception as e:
-                print(f"Error adding document: {e}")
+    processor = DocumentProcessor()
+    processor.batch_process_documents(test_docs)
 
     time.sleep(2)  # Wait for indexing
 
