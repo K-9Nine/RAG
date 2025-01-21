@@ -13,46 +13,6 @@
             width: 100%;
             margin: 10px 0;
         }
-        .delete-options {
-            margin: 10px 0;
-            display: flex;
-            gap: 15px;
-        }
-        .soft-delete-option {
-            margin: 10px 0;
-        }
-        .metadata-filters {
-            display: flex;
-            gap: 10px;
-            margin: 10px 0;
-        }
-        .outdated-doc {
-            margin: 10px 0;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .section {
-            margin: 20px 0;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        #deleteButton {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        #deleteButton:hover {
-            background-color: #c82333;
-        }
-        #deleteButton:disabled {
-            background-color: #dc354580;
-            cursor: not-allowed;
-        }
     </style>
 </head>
 <body>
@@ -71,47 +31,12 @@
         <h3>Upload Document</h3>
         <textarea id="uploadText" rows="5"></textarea>
         <select id="uploadCategory">
-            <option value="phone">Phone</option>
-            <option value="mac">Mac</option>
+            <option value="callswitch">CallSwitch</option>
+            <option value="teams">Teams</option>
+            <option value="horizon">Horizon</option>
+            <option value="mobile">Mobile</option>
         </select>
         <button onclick="uploadDocument()">Upload</button>
-    </div>
-
-    <!-- Enhanced Delete Section -->
-    <div class="section">
-        <h3>Delete Documents</h3>
-        
-        <div class="delete-options">
-            <label>
-                <input type="radio" name="deleteType" value="text" checked> Delete by Text
-            </label>
-            <label>
-                <input type="radio" name="deleteType" value="id"> Delete by ID
-            </label>
-            <label>
-                <input type="radio" name="deleteType" value="metadata"> Delete by Metadata
-            </label>
-            <label>
-                <input type="radio" name="deleteType" value="bulk"> Bulk Delete
-            </label>
-        </div>
-
-        <div class="soft-delete-option">
-            <label>
-                <input type="checkbox" id="softDelete"> Soft Delete (Mark as Outdated)
-            </label>
-        </div>
-
-        <div id="deleteInputArea">
-            <!-- Will be populated based on selected delete type -->
-        </div>
-
-        <button id="deleteButton" onclick="deleteDocument()">Delete</button>
-        
-        <div id="outdatedDocs" style="display: none;">
-            <h4>Outdated Documents</h4>
-            <div id="outdatedDocsList"></div>
-        </div>
     </div>
 
     <script>
@@ -163,155 +88,6 @@
                 console.error('Error:', error);
                 alert('Error uploading document: ' + error.message);
             });
-        }
-
-        // New delete functions
-        document.querySelectorAll('input[name="deleteType"]').forEach(radio => {
-            radio.addEventListener('change', updateDeleteInputArea);
-        });
-
-        function updateDeleteInputArea() {
-            const deleteType = document.querySelector('input[name="deleteType"]:checked').value;
-            const inputArea = document.getElementById('deleteInputArea');
-            
-            let html = '';
-            switch(deleteType) {
-                case 'text':
-                    html = `<textarea placeholder="Enter document text"></textarea>`;
-                    break;
-                case 'id':
-                    html = `<input type="text" placeholder="Enter document ID">`;
-                    break;
-                case 'metadata':
-                    html = `
-                        <div class="metadata-filters">
-                            <input type="text" placeholder="Key" class="metadata-key">
-                            <input type="text" placeholder="Value" class="metadata-value">
-                            <button onclick="addMetadataFilter()">Add Filter</button>
-                        </div>
-                        <div id="metadataFilters"></div>
-                    `;
-                    break;
-                case 'bulk':
-                    html = `<textarea placeholder="Enter document IDs (one per line)"></textarea>`;
-                    break;
-            }
-            inputArea.innerHTML = html;
-        }
-
-        function deleteDocument() {
-            const deleteType = document.querySelector('input[name="deleteType"]:checked').value;
-            const softDelete = document.getElementById('softDelete').checked;
-            let payload = {
-                type: deleteType,
-                softDelete: softDelete
-            };
-            
-            // Build payload based on delete type
-            switch(deleteType) {
-                case 'text':
-                    payload.text = document.querySelector('#deleteInputArea textarea').value;
-                    break;
-                case 'id':
-                    payload.id = document.querySelector('#deleteInputArea input').value;
-                    break;
-                case 'metadata':
-                    payload.metadata = getMetadataFilters();
-                    break;
-                case 'bulk':
-                    payload.ids = document.querySelector('#deleteInputArea textarea').value
-                        .split('\n')
-                        .map(id => id.trim())
-                        .filter(id => id);
-                    break;
-            }
-            
-            if (!validatePayload(payload)) {
-                alert('Please fill in all required fields');
-                return;
-            }
-            
-            if (!confirm('Are you sure you want to delete the selected document(s)?')) {
-                return;
-            }
-            
-            const deleteButton = document.getElementById('deleteButton');
-            deleteButton.disabled = true;
-            deleteButton.textContent = 'Deleting...';
-            
-            fetch('/delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    clearInputs();
-                    if (softDelete) {
-                        loadOutdatedDocs();
-                    }
-                } else {
-                    alert('Delete failed: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error deleting document(s): ' + error.message);
-            })
-            .finally(() => {
-                deleteButton.disabled = false;
-                deleteButton.textContent = 'Delete';
-            });
-        }
-
-        function validatePayload(payload) {
-            switch(payload.type) {
-                case 'text':
-                    return payload.text && payload.text.trim();
-                case 'id':
-                    return payload.id && payload.id.trim();
-                case 'metadata':
-                    return Object.keys(payload.metadata).length > 0;
-                case 'bulk':
-                    return payload.ids && payload.ids.length > 0;
-                default:
-                    return false;
-            }
-        }
-
-        function clearInputs() {
-            const input = document.getElementById('deleteInputArea').querySelector('textarea, input');
-            if (input) input.value = '';
-        }
-
-        function loadOutdatedDocs() {
-            fetch('/outdated')
-                .then(response => response.json())
-                .then(docs => {
-                    const outdatedSection = document.getElementById('outdatedDocs');
-                    const docsList = document.getElementById('outdatedDocsList');
-                    
-                    if (docs.length > 0) {
-                        outdatedSection.style.display = 'block';
-                        docsList.innerHTML = docs.map(doc => `
-                            <div class="outdated-doc">
-                                <div>ID: ${doc._additional.id}</div>
-                                <div>Text: ${doc.text.substring(0, 100)}...</div>
-                                <div>Metadata: ${JSON.stringify(doc.metadata)}</div>
-                            </div>
-                        `).join('');
-                    } else {
-                        outdatedSection.style.display = 'none';
-                    }
-                });
-        }
-
-        // Initialize
-        updateDeleteInputArea();
-        if (document.getElementById('softDelete').checked) {
-            loadOutdatedDocs();
         }
     </script>
 </body>
