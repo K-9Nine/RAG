@@ -239,29 +239,16 @@ class DocumentUpload(BaseModel):
 async def upload_document(request: Request):
     """Process and upload a document with RAG optimization"""
     try:
-        # Get form data and print for debugging
+        # Get form data
         form_data = await request.form()
-        print("Received form data:", dict(form_data))
-        
         content = form_data.get('content', '')
         metadata = form_data.get('metadata', '')
         category = form_data.get('category', '')
 
-        # Validate inputs
-        if not content:
+        if not all([content, metadata, category]):
             return JSONResponse(
                 status_code=400,
-                content={"status": "error", "message": "Content is required"}
-            )
-        if not metadata:
-            return JSONResponse(
-                status_code=400,
-                content={"status": "error", "message": "Metadata is required"}
-            )
-        if not category:
-            return JSONResponse(
-                status_code=400,
-                content={"status": "error", "message": "Category is required"}
+                content={"status": "error", "message": "Missing required fields"}
             )
 
         # Clean the text
@@ -277,7 +264,7 @@ async def upload_document(request: Request):
         
         print(f"Uploading document: {len(chunks)} chunks")
         
-        # Upload each chunk with metadata
+        # Upload each chunk with proper data types
         batch = client.batch.configure(batch_size=100)
         with batch:
             for i, chunk in enumerate(chunks):
@@ -286,8 +273,8 @@ async def upload_document(request: Request):
                     "metadata": f"{metadata} (part {i+1}/{len(chunks)})",
                     "category": category,
                     "originalMetadata": metadata,
-                    "chunkIndex": i,
-                    "totalChunks": len(chunks)
+                    "chunkIndex": i,  # Ensure integer
+                    "totalChunks": len(chunks)  # Ensure integer
                 }
                 
                 client.batch.add_data_object(
@@ -614,4 +601,70 @@ async def diagnose_documents():
             
     except Exception as e:
         print(f"Error in diagnose_documents: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/cleanup")
+async def cleanup_database():
+    """Clean up and reinitialize the database"""
+    try:
+        client = weaviate.Client(
+            url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
+        )
+        
+        # Delete the existing class
+        try:
+            client.schema.delete_class("SupportDocs")
+            print("Deleted existing SupportDocs class")
+        except Exception as e:
+            print(f"Error deleting class: {e}")
+        
+        # Create the class with proper schema
+        class_obj = {
+            "class": "SupportDocs",
+            "description": "Support documentation with proper chunking",
+            "properties": [
+                {
+                    "name": "content",
+                    "dataType": ["text"],
+                    "description": "The document content"
+                },
+                {
+                    "name": "metadata",
+                    "dataType": ["text"],
+                    "description": "Document metadata"
+                },
+                {
+                    "name": "category",
+                    "dataType": ["text"],
+                    "description": "Document category"
+                },
+                {
+                    "name": "originalMetadata",
+                    "dataType": ["text"],
+                    "description": "Original document metadata"
+                },
+                {
+                    "name": "chunkIndex",
+                    "dataType": ["int"],
+                    "description": "Index of this chunk"
+                },
+                {
+                    "name": "totalChunks",
+                    "dataType": ["int"],
+                    "description": "Total number of chunks"
+                }
+            ],
+            "vectorizer": "text2vec-openai"
+        }
+        
+        client.schema.create_class(class_obj)
+        print("Created new SupportDocs class with proper schema")
+        
+        return {
+            "status": "success",
+            "message": "Database cleaned up and reinitialized"
+        }
+            
+    except Exception as e:
+        print(f"Error in cleanup_database: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
