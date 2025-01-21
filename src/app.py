@@ -807,13 +807,15 @@ def validate_document(doc: Dict[str, Any]) -> bool:
     required_fields = ["content", "metadata", "category"]
     return all(doc.get(field) for field in required_fields)
 
-@app.post("/reprocess")
-async def reprocess_documents():
+@app.route("/reprocess", methods=["GET", "POST"])
+async def reprocess_documents(request: Request):
     """Extract, reformat, and re-upload all documents with proper chunking"""
     try:
         client = weaviate.Client(
             url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
         )
+        
+        print("Starting document reprocessing...")
         
         # First, get all existing documents
         result = (
@@ -828,17 +830,21 @@ async def reprocess_documents():
             .do()
         )
         
+        print("Query result:", result)  # Debug print
+        
         if not result or "data" not in result or "Get" not in result["data"] or "SupportDocs" not in result["data"]["Get"]:
             return {"status": "No documents found"}
             
         docs = result["data"]["Get"]["SupportDocs"]
+        print(f"Found {len(docs)} documents to process")
         
         # Backup existing data
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_file = f"backup_{timestamp}.json"
         with open(backup_file, 'w') as f:
             json.dump(docs, f)
-            
+        print(f"Backed up data to {backup_file}")
+        
         # Clean up existing class
         try:
             client.schema.delete_class("SupportDocs")
@@ -894,6 +900,8 @@ async def reprocess_documents():
         
         for doc in docs:
             try:
+                print(f"Processing document {processed_count + 1}/{len(docs)}")
+                
                 # Format document
                 formatted_doc = extract_and_format_document(doc)
                 
@@ -906,6 +914,8 @@ async def reprocess_documents():
                 # Clean and chunk content
                 processed_content = preprocess_text(formatted_doc["content"])
                 chunks = chunk_document(processed_content)
+                
+                print(f"Created {len(chunks)} chunks")
                 
                 # Upload chunks
                 for i, chunk in enumerate(chunks):
@@ -922,6 +932,7 @@ async def reprocess_documents():
                         data_object=properties,
                         class_name="SupportDocs"
                     )
+                    print(f"Uploaded chunk {i+1}/{len(chunks)}")
                 
                 processed_count += 1
                 
