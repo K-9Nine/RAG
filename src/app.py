@@ -201,11 +201,21 @@ async def upload_page(request: Request):
     )
 
 def preprocess_text(text: str) -> str:
-    """Clean and normalize text"""
-    # Remove extra whitespace
+    """Clean and normalize text while preserving hyperlinks"""
+    # Temporarily replace http/https URLs with placeholders
+    url_pattern = r'(https?://[^\s<>]+)'
+    urls = re.findall(url_pattern, text)
+    for i, url in enumerate(urls):
+        text = text.replace(url, f'__URL_{i}__')
+    
+    # Clean text but preserve basic formatting
     text = re.sub(r'\s+', ' ', text.strip())
-    # Remove special characters but keep punctuation
-    text = re.sub(r'[^\w\s.,!?-]', '', text)
+    text = re.sub(r'[^\w\s.,!?;:()\[\]{}\-_\'\"<>]', '', text)
+    
+    # Restore URLs
+    for i, url in enumerate(urls):
+        text = text.replace(f'__URL_{i}__', url)
+    
     return text
 
 def chunk_document(text: str, chunk_size: int = 500, overlap: int = 50) -> List[str]:
@@ -245,7 +255,7 @@ async def upload_document(
                     "content": chunk,
                     "metadata": f"{metadata} (part {i+1}/{len(chunks)})",
                     "category": category,
-                    "originalMetadata": metadata,  # Keep original metadata
+                    "originalMetadata": metadata,
                     "chunkIndex": i,
                     "totalChunks": len(chunks)
                 }
@@ -262,7 +272,8 @@ async def upload_document(
         }
             
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Upload error: {str(e)}")  # Add logging
+        return {"status": "error", "message": str(e)}
 
 @app.get("/categories")
 async def get_categories():

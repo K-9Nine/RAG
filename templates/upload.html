@@ -200,15 +200,20 @@
                 
                 const result = await response.json();
                 
-                if (response.ok) {
+                if (response.ok && result.status === 'success') {
+                    successMessage.textContent = result.message;
                     successMessage.style.display = 'block';
                     errorMessage.style.display = 'none';
+                    
+                    // Clear form
                     document.getElementById('content').value = '';
                     document.getElementById('metadata').value = '';
                     document.getElementById('preview').style.display = 'none';
+                    
+                    // Reload documents list
                     await loadDocuments();
                 } else {
-                    throw new Error(result.detail || 'Upload failed');
+                    throw new Error(result.message || 'Upload failed');
                 }
             } catch (error) {
                 errorMessage.textContent = error.message;
@@ -229,23 +234,34 @@
                 documentsDiv.innerHTML = '';
                 
                 data.documents.forEach(doc => {
-                    const docElement = document.createElement('div');
-                    docElement.className = 'document-item';
-                    docElement.innerHTML = `
-                        <div class="document-content">
-                            <div><strong>Category:</strong> ${doc.category}</div>
-                            <div class="document-metadata">
-                                <strong>Metadata:</strong> ${doc.metadata}
-                            </div>
-                            <div>${doc.content.substring(0, 200)}${doc.content.length > 200 ? '...' : ''}</div>
-                        </div>
-                        <button class="delete-btn" onclick="deleteDocument('${doc.id}')">Delete</button>
-                    `;
-                    documentsDiv.appendChild(docElement);
+                    documentsDiv.appendChild(displayDocument(doc));
                 });
             } catch (error) {
                 console.error('Error loading documents:', error);
             }
+        }
+
+        function displayDocument(doc) {
+            const docElement = document.createElement('div');
+            docElement.className = 'document-item';
+            
+            // Create content with clickable links
+            const content = doc.content.replace(
+                /(https?:\/\/[^\s<>]+)/g, 
+                '<a href="$1" target="_blank">$1</a>'
+            );
+            
+            docElement.innerHTML = `
+                <div class="document-content">
+                    <div><strong>Category:</strong> ${doc.category}</div>
+                    <div class="document-metadata">
+                        <strong>Metadata:</strong> ${doc.metadata}
+                    </div>
+                    <div>${content.substring(0, 200)}${content.length > 200 ? '...' : ''}</div>
+                </div>
+                <button class="delete-btn" onclick="deleteDocument('${doc.id}')">Delete</button>
+            `;
+            return docElement;
         }
 
         async function deleteDocument(docId) {
