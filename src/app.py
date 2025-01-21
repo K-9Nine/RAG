@@ -566,6 +566,10 @@ async def diagnose_documents():
             url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
         )
         
+        # First, get the schema
+        schema = client.schema.get()
+        print("Current schema:", schema)
+        
         # Get all documents with all properties
         result = (
             client.query
@@ -578,9 +582,11 @@ async def diagnose_documents():
             return {"status": "No documents found"}
             
         docs = result["data"]["Get"]["SupportDocs"]
+        print("Raw documents:", docs)  # Print raw document data
         
-        # Analyze document structure
+        # Detailed analysis
         analysis = {
+            "schema": schema,
             "total_documents": len(docs),
             "documents_by_category": {},
             "property_analysis": {
@@ -588,10 +594,14 @@ async def diagnose_documents():
                 "without_chunk_info": 0,
                 "with_original_metadata": 0,
                 "categories": set()
-            }
+            },
+            "sample_documents": docs[:2]  # Include first two documents for inspection
         }
         
         for doc in docs:
+            # Print each document for debugging
+            print(f"Processing document: {doc}")
+            
             # Count by category
             category = doc.get('category', 'unknown')
             analysis["documents_by_category"][category] = analysis["documents_by_category"].get(category, 0) + 1
@@ -614,7 +624,7 @@ async def diagnose_documents():
             
     except Exception as e:
         print(f"Error in diagnose_documents: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"error": str(e), "traceback": str(e.__traceback__)}
 
 @app.get("/cleanup")
 async def cleanup_database():
@@ -635,6 +645,7 @@ async def cleanup_database():
         class_obj = {
             "class": "SupportDocs",
             "description": "Support documentation with proper chunking",
+            "vectorizer": "text2vec-openai",
             "properties": [
                 {
                     "name": "content",
@@ -666,18 +677,23 @@ async def cleanup_database():
                     "dataType": ["int"],
                     "description": "Total number of chunks"
                 }
-            ],
-            "vectorizer": "text2vec-openai"
+            ]
         }
         
+        # Create schema and verify
         client.schema.create_class(class_obj)
-        print("Created new SupportDocs class with proper schema")
+        print("Created new SupportDocs class")
+        
+        # Verify schema was created correctly
+        new_schema = client.schema.get()
+        print("New schema:", new_schema)
         
         return {
             "status": "success",
-            "message": "Database cleaned up and reinitialized"
+            "message": "Database cleaned up and reinitialized",
+            "schema": new_schema
         }
             
     except Exception as e:
         print(f"Error in cleanup_database: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"error": str(e), "traceback": str(e.__traceback__)}
