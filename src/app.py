@@ -557,3 +557,61 @@ async def chat(request: Request):
     except Exception as e:
         print(f"Chat error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/diagnose")
+async def diagnose_documents():
+    """Diagnostic endpoint to check document structure"""
+    try:
+        client = weaviate.Client(
+            url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
+        )
+        
+        # Get all documents with all properties
+        result = (
+            client.query
+            .get("SupportDocs")
+            .with_additional(["id"])
+            .do()
+        )
+        
+        if not result or "data" not in result or "Get" not in result["data"] or "SupportDocs" not in result["data"]["Get"]:
+            return {"status": "No documents found"}
+            
+        docs = result["data"]["Get"]["SupportDocs"]
+        
+        # Analyze document structure
+        analysis = {
+            "total_documents": len(docs),
+            "documents_by_category": {},
+            "property_analysis": {
+                "with_chunk_info": 0,
+                "without_chunk_info": 0,
+                "with_original_metadata": 0,
+                "categories": set()
+            }
+        }
+        
+        for doc in docs:
+            # Count by category
+            category = doc.get('category', 'unknown')
+            analysis["documents_by_category"][category] = analysis["documents_by_category"].get(category, 0) + 1
+            analysis["property_analysis"]["categories"].add(category)
+            
+            # Check chunk information
+            if doc.get('chunkIndex') is not None and doc.get('totalChunks') is not None:
+                analysis["property_analysis"]["with_chunk_info"] += 1
+            else:
+                analysis["property_analysis"]["without_chunk_info"] += 1
+                
+            # Check metadata
+            if doc.get('originalMetadata'):
+                analysis["property_analysis"]["with_original_metadata"] += 1
+                
+        # Convert sets to lists for JSON serialization
+        analysis["property_analysis"]["categories"] = list(analysis["property_analysis"]["categories"])
+        
+        return analysis
+            
+    except Exception as e:
+        print(f"Error in diagnose_documents: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
