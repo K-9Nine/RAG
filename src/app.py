@@ -239,10 +239,8 @@ class DocumentUpload(BaseModel):
 async def upload_document(request: Request):
     """Process and upload a document with RAG optimization"""
     try:
-        # Get form data and print for debugging
+        # Get form data
         form_data = await request.form()
-        print("Received form data:", dict(form_data))
-        
         content = form_data.get('content', '')
         metadata = form_data.get('metadata', '')
         category = form_data.get('category', '')
@@ -255,51 +253,43 @@ async def upload_document(request: Request):
 
         # Clean the text
         processed_content = preprocess_text(content)
-        
-        # Split into chunks
         chunks = chunk_document(processed_content)
         
-        # Initialize Weaviate client
         client = weaviate.Client(
             url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
         )
         
-        print(f"Uploading document: {len(chunks)} chunks")
-        print(f"Category: {category}")
-        print(f"Metadata: {metadata}")
-        
-        # Upload each chunk with explicit property types
+        uploaded_ids = []
         for i, chunk in enumerate(chunks):
-            try:
-                # Create properties with explicit types
-                properties = {
-                    "content": str(chunk),
-                    "metadata": str(metadata),
-                    "category": str(category),
-                    "originalMetadata": str(metadata),
-                    "chunkIndex": int(i),
-                    "totalChunks": int(len(chunks))
-                }
-                
-                print(f"Adding chunk {i+1}/{len(chunks)} with properties:", properties)
-                
-                # Add document directly instead of using batch
-                client.data_object.create(
-                    data_object=properties,
-                    class_name="SupportDocs"
-                )
-                
-            except Exception as e:
-                print(f"Error adding chunk {i}: {str(e)}")
-                raise e
-        
-        print("Upload completed successfully")
+            properties = {
+                "content": str(chunk),
+                "metadata": str(metadata),
+                "category": str(category),
+                "originalMetadata": str(metadata),
+                "chunkIndex": i,
+                "totalChunks": len(chunks)
+            }
+            
+            print(f"Adding chunk with properties:", properties)
+            
+            # Add document and get ID
+            result = client.data_object.create(
+                data_object=properties,
+                class_name="SupportDocs"
+            )
+            
+            uploaded_ids.append(result)
+            
+            # Verify upload
+            uploaded_doc = client.data_object.get_by_id(result, class_name="SupportDocs")
+            print(f"Verified uploaded chunk {i}:", uploaded_doc)
         
         return JSONResponse(
             content={
                 "status": "success", 
                 "message": f"Document processed and uploaded in {len(chunks)} chunks",
-                "chunks": len(chunks)
+                "chunks": len(chunks),
+                "uploaded_ids": uploaded_ids
             }
         )
             
@@ -566,41 +556,59 @@ async def diagnose_documents():
             url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
         )
         
-        # First, get the schema
-        schema = client.schema.get()
-        print("Current schema:", schema)
-        
-        # Get all documents with all properties
+        # Get all documents with explicit field selection
         result = (
             client.query
-            .get("SupportDocs")
+            .get("SupportDocs", [
+                "content", 
+                "metadata", 
+                "category", 
+                "originalMetadata", 
+                "chunkIndex", 
+                "totalChunks"
+            ])
             .with_additional(["id"])
             .do()
         )
+        
+        print("Raw query result:", result)  # Debug print
         
         if not result or "data" not in result or "Get" not in result["data"] or "SupportDocs" not in result["data"]["Get"]:
             return {"status": "No documents found"}
             
         docs = result["data"]["Get"]["SupportDocs"]
-        print("Raw documents:", docs)  # Print raw document data
         
-        # Detailed analysis
+        # Let's also try a direct object get for comparison
+        sample_doc_id = docs[0]["_additional"]["id"] if docs else None
+        if sample_doc_id:
+            direct_doc = client.data_object.get_by_id(sample_doc_id, class_name="SupportDocs")
+            print("Direct document fetch:", direct_doc)
+        
         analysis = {
-            "schema": schema,
             "total_documents": len(docs),
+            "raw_documents": docs,  # Include full document data
             "documents_by_category": {},
             "property_analysis": {
                 "with_chunk_info": 0,
                 "without_chunk_info": 0,
                 "with_original_metadata": 0,
-                "categories": set()
-            },
-            "sample_documents": docs[:2]  # Include first two documents for inspection
+                "categories": set(),
+                "property_counts": {
+                    "content": 0,
+                    "metadata": 0,
+                    "category": 0,
+                    "originalMetadata": 0,
+                    "chunkIndex": 0,
+                    "totalChunks": 0
+                }
+            }
         }
         
         for doc in docs:
-            # Print each document for debugging
-            print(f"Processing document: {doc}")
+            # Count properties
+            for prop in ["content", "metadata", "category", "originalMetadata", "chunkIndex", "totalChunks"]:
+                if doc.get(prop) is not None:
+                    analysis["property_analysis"]["property_counts"][prop] += 1
             
             # Count by category
             category = doc.get('category', 'unknown')
@@ -616,7 +624,7 @@ async def diagnose_documents():
             # Check metadata
             if doc.get('originalMetadata'):
                 analysis["property_analysis"]["with_original_metadata"] += 1
-                
+        
         # Convert sets to lists for JSON serialization
         analysis["property_analysis"]["categories"] = list(analysis["property_analysis"]["categories"])
         
