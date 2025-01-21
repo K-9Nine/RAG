@@ -603,7 +603,7 @@ async def diagnose_documents():
         print(f"Error in diagnose_documents: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/cleanup")
+@app.get("/cleanup")
 async def cleanup_database():
     """Clean up and reinitialize the database"""
     try:
