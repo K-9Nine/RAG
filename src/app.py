@@ -6,7 +6,7 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 import weaviate
 import os
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any
 from pathlib import Path
 from openai import OpenAI
 import httpx
@@ -791,4 +791,264 @@ async def cleanup_database():
             
     except Exception as e:
         print(f"Error in cleanup_database: {str(e)}")
+        return {"error": str(e)}
+
+def extract_and_format_document(doc: Dict[str, Any]) -> Dict[str, Any]:
+    """Format a document with proper structure"""
+    return {
+        "content": doc.get("content", ""),
+        "metadata": doc.get("metadata", ""),
+        "category": doc.get("category", "unknown"),
+        "originalMetadata": doc.get("metadata", "")  # Use metadata as originalMetadata if not present
+    }
+
+def validate_document(doc: Dict[str, Any]) -> bool:
+    """Validate document has required fields"""
+    required_fields = ["content", "metadata", "category"]
+    return all(doc.get(field) for field in required_fields)
+
+@app.post("/reprocess")
+async def reprocess_documents():
+    """Extract, reformat, and re-upload all documents with proper chunking"""
+    try:
+        client = weaviate.Client(
+            url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
+        )
+        
+        # First, get all existing documents
+        result = (
+            client.query
+            .get("SupportDocs", [
+                "content", 
+                "metadata", 
+                "category", 
+                "originalMetadata"
+            ])
+            .with_additional(["id"])
+            .do()
+        )
+        
+        if not result or "data" not in result or "Get" not in result["data"] or "SupportDocs" not in result["data"]["Get"]:
+            return {"status": "No documents found"}
+            
+        docs = result["data"]["Get"]["SupportDocs"]
+        
+        # Backup existing data
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_file = f"backup_{timestamp}.json"
+        with open(backup_file, 'w') as f:
+            json.dump(docs, f)
+            
+        # Clean up existing class
+        try:
+            client.schema.delete_class("SupportDocs")
+            print("Deleted existing SupportDocs class")
+        except Exception as e:
+            print(f"Error deleting class: {e}")
+            
+        # Recreate schema
+        class_obj = {
+            "class": "SupportDocs",
+            "description": "Support documentation with proper chunking",
+            "vectorizer": "text2vec-openai",
+            "properties": [
+                {
+                    "name": "content",
+                    "dataType": ["text"],
+                    "description": "The document content"
+                },
+                {
+                    "name": "metadata",
+                    "dataType": ["text"],
+                    "description": "Document metadata"
+                },
+                {
+                    "name": "category",
+                    "dataType": ["text"],
+                    "description": "Document category"
+                },
+                {
+                    "name": "originalMetadata",
+                    "dataType": ["text"],
+                    "description": "Original document metadata"
+                },
+                {
+                    "name": "chunkIndex",
+                    "dataType": ["int"],
+                    "description": "Index of this chunk"
+                },
+                {
+                    "name": "totalChunks",
+                    "dataType": ["int"],
+                    "description": "Total number of chunks"
+                }
+            ]
+        }
+        
+        client.schema.create_class(class_obj)
+        print("Created new SupportDocs class")
+        
+        # Process and re-upload documents
+        processed_count = 0
+        error_count = 0
+        
+        for doc in docs:
+            try:
+                # Format document
+                formatted_doc = extract_and_format_document(doc)
+                
+                # Validate
+                if not validate_document(formatted_doc):
+                    print(f"Skipping invalid document: {doc.get('_additional', {}).get('id')}")
+                    error_count += 1
+                    continue
+                
+                # Clean and chunk content
+                processed_content = preprocess_text(formatted_doc["content"])
+                chunks = chunk_document(processed_content)
+                
+                # Upload chunks
+                for i, chunk in enumerate(chunks):
+                    properties = {
+                        "content": str(chunk),
+                        "metadata": str(formatted_doc["metadata"]),
+                        "category": str(formatted_doc["category"]),
+                        "originalMetadata": str(formatted_doc["originalMetadata"]),
+                        "chunkIndex": i,
+                        "totalChunks": len(chunks)
+                    }
+                    
+                    client.data_object.create(
+                        data_object=properties,
+                        class_name="SupportDocs"
+                    )
+                
+                processed_count += 1
+                
+            except Exception as e:
+                print(f"Error processing document: {str(e)}")
+                error_count += 1
+                continue
+        
+        return {
+            "status": "success",
+            "processed": processed_count,
+            "errors": error_count,
+            "backup_file": backup_file
+        }
+            
+    except Exception as e:
+        print(f"Error in reprocess_documents: {str(e)}")
+        return {"error": str(e)}
+
+@app.post("/validate")
+async def validate_upload(request: Request):
+    """Validate document before upload"""
+    try:
+        form_data = await request.form()
+        
+        # Check required fields
+        content = form_data.get('content', '')
+        metadata = form_data.get('metadata', '')
+        category = form_data.get('category', '')
+        
+        validation = {
+            "valid": True,
+            "errors": []
+        }
+        
+        # Validate required fields
+        if not content:
+            validation["errors"].append("Content is required")
+        if not metadata:
+            validation["errors"].append("Metadata is required")
+        if not category:
+            validation["errors"].append("Category is required")
+            
+        # Check content length
+        if len(content) < 10:
+            validation["errors"].append("Content must be at least 10 characters")
+            
+        # Update valid flag
+        validation["valid"] = len(validation["errors"]) == 0
+        
+        return validation
+            
+    except Exception as e:
+        return {
+            "valid": False,
+            "errors": [str(e)]
+        }
+
+@app.post("/cleanup-data")
+async def cleanup_existing_data():
+    """Clean up existing documents without reprocessing"""
+    try:
+        client = weaviate.Client(
+            url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
+        )
+        
+        # Get all documents
+        result = (
+            client.query
+            .get("SupportDocs", [
+                "content", 
+                "metadata", 
+                "category", 
+                "originalMetadata",
+                "chunkIndex",
+                "totalChunks"
+            ])
+            .with_additional(["id"])
+            .do()
+        )
+        
+        if not result or "data" not in result or "Get" not in result["data"] or "SupportDocs" not in result["data"]["Get"]:
+            return {"status": "No documents found"}
+            
+        docs = result["data"]["Get"]["SupportDocs"]
+        
+        # Process each document
+        updated_count = 0
+        error_count = 0
+        
+        for doc in docs:
+            try:
+                doc_id = doc["_additional"]["id"]
+                
+                # Update only if missing required fields
+                if not doc.get("category"):
+                    doc["category"] = "unknown"
+                if not doc.get("originalMetadata"):
+                    doc["originalMetadata"] = doc.get("metadata", "")
+                if doc.get("chunkIndex") is None:
+                    doc["chunkIndex"] = 0
+                if doc.get("totalChunks") is None:
+                    doc["totalChunks"] = 1
+                    
+                # Remove _additional field
+                doc.pop("_additional", None)
+                
+                # Update document
+                client.data_object.update(
+                    doc,
+                    class_name="SupportDocs",
+                    uuid=doc_id
+                )
+                
+                updated_count += 1
+                
+            except Exception as e:
+                print(f"Error updating document: {str(e)}")
+                error_count += 1
+                continue
+        
+        return {
+            "status": "success",
+            "updated": updated_count,
+            "errors": error_count
+        }
+            
+    except Exception as e:
+        print(f"Error in cleanup_existing_data: {str(e)}")
         return {"error": str(e)}
