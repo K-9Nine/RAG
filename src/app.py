@@ -387,36 +387,43 @@ async def get_documents():
         for doc in result["data"]["Get"]["SupportDocs"]:
             try:
                 key = f"{doc.get('originalMetadata', '')}_{doc.get('category', '')}"
-                chunk_index = doc.get('chunkIndex', 0)
+                chunk_index = int(doc.get('chunkIndex', 0))  # Ensure integer
+                total_chunks = int(doc.get('totalChunks', 1))  # Ensure integer
                 
                 if key not in documents:
                     documents[key] = {
-                        "content": [""] * doc.get('totalChunks', 1),  # Initialize with empty strings
+                        "content": [],  # Start with empty list
                         "metadata": doc.get('originalMetadata', ''),
                         "category": doc.get('category', ''),
                         "id": doc.get('_additional', {}).get('id', ''),
-                        "chunks": doc.get('totalChunks', 1)
+                        "chunks": total_chunks
                     }
+                    # Initialize content list with empty strings
+                    documents[key]["content"] = [""] * total_chunks
                 
                 # Place chunk in correct position
                 if 0 <= chunk_index < len(documents[key]["content"]):
                     documents[key]["content"][chunk_index] = doc.get('content', '')
                 
             except Exception as e:
-                print(f"Error processing document: {str(e)}")
+                print(f"Error processing document chunk: {str(e)}")
                 continue
         
         # Combine chunks and format for display
         formatted_docs = []
         for doc in documents.values():
             try:
-                formatted_docs.append({
-                    "id": doc["id"],
-                    "content": " ".join(filter(None, doc["content"])),  # Filter out empty chunks
-                    "metadata": doc["metadata"],
-                    "category": doc["category"],
-                    "chunks": doc["chunks"]
-                })
+                # Filter out empty strings and join chunks
+                content = " ".join([chunk for chunk in doc["content"] if chunk])
+                
+                if content:  # Only add document if it has content
+                    formatted_docs.append({
+                        "id": doc["id"],
+                        "content": content,
+                        "metadata": doc["metadata"],
+                        "category": doc["category"],
+                        "chunks": doc["chunks"]
+                    })
             except Exception as e:
                 print(f"Error formatting document: {str(e)}")
                 continue
