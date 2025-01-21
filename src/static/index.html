@@ -4,88 +4,129 @@
     <title>Support Assistant</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 0 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-color: rgb(255,255,255);
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background-color: rgb(64,147,54);
+            color: rgb(255,255,255);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 500;
         }
         .chat-container {
-            margin-top: 20px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            background-color: rgb(255,255,255);
         }
         #chatHistory {
-            height: 400px;
+            flex: 1;
             overflow-y: auto;
-            margin-bottom: 10px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 20px;
+            background-color: rgb(255,255,255);
+        }
+        .chat-input-container {
+            background-color: rgb(255,255,255);
+            padding: 10px 20px;
+            border-top: 1px solid rgba(0,0,0,0.1);
         }
         .chat-input {
             display: flex;
             flex-direction: column;
             gap: 10px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        select {
+            padding: 12px;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            background-color: rgb(255,255,255);
+            font-size: 0.9rem;
         }
         textarea {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            resize: vertical;
-        }
-        select {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-bottom: 10px;
+            padding: 12px;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            resize: none;
+            font-family: inherit;
+            font-size: 0.9rem;
+            background-color: rgb(255,255,255);
         }
         button {
-            padding: 8px 16px;
-            background-color: #007bff;
-            color: white;
+            padding: 12px 24px;
+            background-color: rgb(64,147,54);
+            color: rgb(255,255,255);
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
         }
         button:hover {
-            background-color: #0056b3;
+            background-color: rgb(54,127,44);
         }
         .user-message {
-            background-color: #e3f2fd;
-            border-radius: 4px;
-            padding: 8px;
-            margin: 5px 0;
+            background-color: rgb(93,252,245);
+            color: rgb(0,0,0);
+            padding: 12px 16px;
+            border-radius: 12px 12px 0 12px;
+            margin: 8px 0;
+            max-width: 80%;
+            align-self: flex-end;
+            margin-left: auto;
         }
         .assistant-message {
-            background-color: #f5f5f5;
-            border-radius: 4px;
-            padding: 8px;
-            margin: 5px 0;
+            background-color: rgb(255,255,255);
+            color: rgb(0,0,0);
+            padding: 12px 16px;
+            border-radius: 12px 12px 12px 0;
+            margin: 8px 0;
+            max-width: 80%;
+            border: 1px solid rgba(0,0,0,0.1);
         }
         .category-label {
-            font-size: 0.8em;
-            color: #666;
+            font-size: 0.9rem;
+            color: rgb(0,0,0);
             margin-bottom: 4px;
         }
     </style>
 </head>
 <body>
-    <h1>Support Assistant</h1>
+    <div class="header">
+        <h1>Support Assistant</h1>
+    </div>
 
     <div class="chat-container">
         <div id="chatHistory"></div>
-        <div class="chat-input">
-            <div class="category-label">Select Support Category:</div>
-            <select id="supportCategory">
-                <option value="phone">Phone System</option>
-                <option value="fibre">Fibre Leased Line</option>
-                <option value="email">Email</option>
-                <option value="broadband">Broadband</option>
-            </select>
-            <textarea id="userInput" rows="3" placeholder="Type your question here..."></textarea>
-            <button onclick="sendMessage()">Send Message</button>
+        <div class="chat-input-container">
+            <div class="chat-input">
+                <div class="category-label">Select Support Category:</div>
+                <select id="supportCategory">
+                    <option value="phone">Phone System</option>
+                    <option value="fibre">Fibre Leased Line</option>
+                    <option value="email">Email</option>
+                    <option value="broadband">Broadband</option>
+                </select>
+                <textarea id="userInput" rows="3" placeholder="Type your question here..."></textarea>
+                <button onclick="sendMessage()">Send Message</button>
+            </div>
         </div>
     </div>
 
