@@ -1179,6 +1179,278 @@ def setup_test_docs():
             "content": "Integration Builder: Visual tool for creating custom integrations. Pre-built templates for common systems. Test and debug tools.",
             "category": "phone",
             "metadata": '{"type": "feature", "category": "integration", "product": "callswitch", "feature": "builder"}'
+        },
+
+        # Adding Phone System Setup
+        {
+            "content": "Initial Setup: Configure system name, timezone, and regional settings. Set up admin accounts and access levels. Define organization structure.",
+            "category": "phone",
+            "metadata": '{"type": "setup", "category": "system", "product": "callswitch", "feature": "initial"}'
+        },
+        {
+            "content": "Number Management: Port existing numbers or provision new ones. Set up DID ranges and extensions. Configure emergency numbers.",
+            "category": "phone",
+            "metadata": '{"type": "setup", "category": "system", "product": "callswitch", "feature": "numbers"}'
+        },
+        {
+            "content": "System Policies: Define password requirements, session timeouts, and access restrictions. Set up backup schedules and retention policies.",
+            "category": "phone",
+            "metadata": '{"type": "setup", "category": "system", "product": "callswitch", "feature": "policies"}'
+        },
+
+        # Adding Call Recording Management
+        {
+            "content": "Recording Setup: Configure recording rules by user, group, or call type. Set quality parameters and storage locations.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "recording", "product": "callswitch", "feature": "setup"}'
+        },
+        {
+            "content": "Recording Access: Define who can access recordings. Set up secure playback and download permissions. Audit recording access.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "recording", "product": "callswitch", "feature": "access"}'
+        },
+        {
+            "content": "Recording Retention: Set retention periods by call type. Configure automatic deletion rules. Export recordings for archival.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "recording", "product": "callswitch", "feature": "retention"}'
+        },
+
+        # Adding User Management
+        {
+            "content": "User Creation: Add users individually or bulk import. Set up roles and permissions. Configure extension numbers and voicemail.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "users", "product": "callswitch", "feature": "creation"}'
+        },
+        {
+            "content": "User Groups: Create departments and teams. Assign managers and supervisors. Set group-level permissions and features.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "users", "product": "callswitch", "feature": "groups"}'
+        },
+        {
+            "content": "User Settings: Configure personal preferences, language, timezone. Set up call forwarding rules and device preferences.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "users", "product": "callswitch", "feature": "settings"}'
+        },
+
+        # Adding Device Management
+        {
+            "content": "Device Inventory: Track all phones and devices. Monitor registration status and firmware versions. Schedule updates.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "devices", "product": "callswitch", "feature": "inventory"}'
+        },
+        {
+            "content": "Device Configuration: Set up phone profiles and templates. Configure line keys and feature access. Manage phone directories.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "devices", "product": "callswitch", "feature": "configuration"}'
+        },
+        {
+            "content": "Device Monitoring: Track device health and performance. Monitor call quality metrics. Identify and resolve device issues.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "devices", "product": "callswitch", "feature": "monitoring"}'
+        },
+
+        # Adding Billing Features
+        {
+            "content": "Billing Overview: Manage subscriptions, usage charges, and add-ons. View detailed billing history and generate invoices.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "billing", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Usage Tracking: Monitor call minutes, SMS usage, and feature utilization. Set up alerts for usage thresholds. Export usage reports.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "billing", "product": "callswitch", "feature": "usage"}'
+        },
+        {
+            "content": "Payment Management: Configure payment methods and billing cycles. Set up automatic payments. Handle credit adjustments.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "billing", "product": "callswitch", "feature": "payment"}'
+        },
+
+        # Adding Call Flow Designer
+        {
+            "content": "Flow Designer Overview: Visual tool for creating call flows. Drag-and-drop interface for routing rules. Real-time flow validation.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "flow-designer", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Flow Components: Time conditions, IVR menus, queues, voicemail, ring groups. Conditional routing based on caller ID or time.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "flow-designer", "product": "callswitch", "feature": "components"}'
+        },
+        {
+            "content": "Flow Testing: Test call flows before publishing. Debug routing issues. Monitor flow performance and usage statistics.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "flow-designer", "product": "callswitch", "feature": "testing"}'
+        },
+
+        # Adding Number Management
+        {
+            "content": "Number Porting: Port existing numbers to CallSwitch. Track porting status and requirements. Handle number activation.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "numbers", "product": "callswitch", "feature": "porting"}'
+        },
+        {
+            "content": "Number Inventory: Manage DID numbers and ranges. Track number assignments and usage. Reserve numbers for future use.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "numbers", "product": "callswitch", "feature": "inventory"}'
+        },
+        {
+            "content": "Emergency Numbers: Configure emergency service addresses. Update E911 information. Test emergency calling functionality.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "numbers", "product": "callswitch", "feature": "emergency"}'
+        },
+
+        # Adding System Maintenance
+        {
+            "content": "Maintenance Windows: Schedule system updates and maintenance. Notify users of planned downtime. Monitor system health.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "maintenance", "product": "callswitch", "feature": "windows"}'
+        },
+        {
+            "content": "System Backup: Regular backup of configuration and data. Verify backup integrity. Test restore procedures.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "maintenance", "product": "callswitch", "feature": "backup"}'
+        },
+        {
+            "content": "Performance Tuning: Optimize system performance. Monitor resource usage. Implement scaling recommendations.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "maintenance", "product": "callswitch", "feature": "tuning"}'
+        },
+
+        # Adding Network Configuration
+        {
+            "content": "Network Requirements: Minimum bandwidth per call (100Kbps). Port requirements (SIP 5060/5061, RTP 10000-20000). QoS recommendations.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "network", "product": "callswitch", "feature": "requirements"}'
+        },
+        {
+            "content": "VLAN Setup: Configure voice VLAN for quality of service. Set up DHCP options for phones. Implement QoS policies.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "network", "product": "callswitch", "feature": "vlan"}'
+        },
+        {
+            "content": "Firewall Configuration: Allow required ports and protocols. Configure SIP ALG settings. Set up security policies.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "network", "product": "callswitch", "feature": "firewall"}'
+        },
+
+        # Adding Phone Features
+        {
+            "content": "BLF Configuration: Set up Busy Lamp Field monitoring. Configure quick dial keys. Monitor extension status.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "phones", "product": "callswitch", "feature": "blf"}'
+        },
+        {
+            "content": "Line Key Programming: Customize function keys and line appearances. Set up speed dial entries. Configure feature access keys.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "phones", "product": "callswitch", "feature": "line-keys"}'
+        },
+        {
+            "content": "Phone Display: Customize display layout and information. Configure caller ID display. Set up screen savers.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "phones", "product": "callswitch", "feature": "display"}'
+        },
+
+        # Adding Voicemail Features
+        {
+            "content": "Voicemail Setup: Configure PIN and security options. Set up email notifications. Define greeting options.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "voicemail", "product": "callswitch", "feature": "setup"}'
+        },
+        {
+            "content": "Message Management: Access messages from phone or email. Forward messages to other users. Save important messages.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "voicemail", "product": "callswitch", "feature": "messages"}'
+        },
+        {
+            "content": "Greeting Options: Record multiple greetings. Set up busy and unavailable messages. Schedule temporary greetings.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "voicemail", "product": "callswitch", "feature": "greetings"}'
+        },
+
+        # Adding Call Handling
+        {
+            "content": "Call Screening: Screen incoming calls with caller ID. Block unwanted calls. Set up VIP caller lists.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "calls", "product": "callswitch", "feature": "screening"}'
+        },
+        {
+            "content": "Call Routing: Set up time-based routing rules. Configure holiday schedules. Define overflow handling.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "calls", "product": "callswitch", "feature": "routing"}'
+        },
+        {
+            "content": "Call Queuing: Configure queue parameters and announcements. Set up comfort messages. Define queue exit options.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "calls", "product": "callswitch", "feature": "queuing"}'
+        },
+
+        # Adding Reporting Features
+        {
+            "content": "Call Reports: Generate detailed call reports by user, group, or queue. Export in multiple formats. Schedule automated reports.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "reporting", "product": "callswitch", "feature": "calls"}'
+        },
+        {
+            "content": "Quality Reports: Monitor call quality metrics and trends. Track MOS scores and network performance. Identify quality issues.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "reporting", "product": "callswitch", "feature": "quality"}'
+        },
+        {
+            "content": "Usage Reports: Track feature usage and adoption. Monitor system capacity. Analyze peak usage patterns.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "reporting", "product": "callswitch", "feature": "usage"}'
+        },
+
+        # Adding Integration Features
+        {
+            "content": "Email Integration: Send voicemails and faxes to email. Click-to-call from email clients. Calendar integration for presence.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "integration", "product": "callswitch", "feature": "email"}'
+        },
+        {
+            "content": "CRM Integration: Screen pop with incoming calls. Click-to-dial from CRM. Call logging and recording access.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "integration", "product": "callswitch", "feature": "crm"}'
+        },
+        {
+            "content": "Custom Integration: REST API access for custom development. Webhook support for events. Custom field mapping.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "integration", "product": "callswitch", "feature": "custom"}'
+        },
+
+        # Adding Security Features
+        {
+            "content": "Access Control: Role-based access control (RBAC). IP address restrictions. Failed login protection.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "security", "product": "callswitch", "feature": "access"}'
+        },
+        {
+            "content": "Call Security: Encrypt voice traffic with SRTP. Secure signaling with TLS. Prevent toll fraud.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "security", "product": "callswitch", "feature": "calls"}'
+        },
+        {
+            "content": "Data Security: Encrypt stored data and backups. Secure file transfers. Regular security audits.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "security", "product": "callswitch", "feature": "data"}'
+        },
+
+        # Adding Mobile Features
+        {
+            "content": "Mobile App Features: Make/receive calls through mobile app. Access contacts and call history. Manage voicemail.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "mobile", "product": "callswitch", "feature": "app"}'
+        },
+        {
+            "content": "Mobile Security: Secure authentication methods. Remote wipe capability. Data encryption on device.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "mobile", "product": "callswitch", "feature": "security"}'
+        },
+        {
+            "content": "Mobile Settings: Configure notification preferences. Set up call forwarding rules. Manage device settings.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "mobile", "product": "callswitch", "feature": "settings"}'
         }
     ]
 
