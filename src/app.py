@@ -1,7 +1,9 @@
 from fastapi import FastAPI, HTTPException, Query, Form, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel
 import weaviate
 import os
 from typing import Dict, Optional, List
@@ -228,14 +230,27 @@ def chunk_document(text: str, chunk_size: int = 500, overlap: int = 50) -> List[
     )
     return text_splitter.split_text(text)
 
+class DocumentUpload(BaseModel):
+    content: str
+    metadata: str
+    category: str
+
 @app.post("/upload")
-async def upload_document(
-    content: str = Form(...),
-    metadata: str = Form(...),
-    category: str = Form(...),
-):
+async def upload_document(request: Request):
     """Process and upload a document with RAG optimization"""
     try:
+        # Get form data
+        form_data = await request.form()
+        content = form_data.get('content')
+        metadata = form_data.get('metadata')
+        category = form_data.get('category')
+
+        if not all([content, metadata, category]):
+            return JSONResponse(
+                status_code=400,
+                content={"status": "error", "message": "Missing required fields"}
+            )
+
         # Clean the text
         processed_content = preprocess_text(content)
         
@@ -265,15 +280,20 @@ async def upload_document(
                     class_name="SupportDocs"
                 )
         
-        return {
-            "status": "success", 
-            "message": f"Document processed and uploaded in {len(chunks)} chunks",
-            "chunks": len(chunks)
-        }
+        return JSONResponse(
+            content={
+                "status": "success", 
+                "message": f"Document processed and uploaded in {len(chunks)} chunks",
+                "chunks": len(chunks)
+            }
+        )
             
     except Exception as e:
         print(f"Upload error: {str(e)}")  # Add logging
-        return {"status": "error", "message": str(e)}
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "message": str(e)}
+        )
 
 @app.get("/categories")
 async def get_categories():
