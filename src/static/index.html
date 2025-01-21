@@ -223,10 +223,27 @@
             addMessage('assistant', `Hello! I'm here to help you with ${category}. What would you like to know?`);
         }
 
-        function addMessage(type, content) {
+        function addMessage(type, content, confidence = null) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${type}-message`;
-            messageDiv.innerHTML = content;
+            
+            // Create message content
+            let messageContent = content;
+            
+            // Add confidence badge for assistant messages if confidence exists
+            if (type === 'assistant' && confidence) {
+                let confidenceClass = 'low-confidence';
+                if (confidence >= 0.8) confidenceClass = 'high-confidence';
+                else if (confidence >= 0.5) confidenceClass = 'medium-confidence';
+                
+                const confidencePercent = Math.round(confidence * 100);
+                messageContent += `
+                    <div class="confidence-tag ${confidenceClass}">
+                        ${confidencePercent}% Confidence
+                    </div>`;
+            }
+            
+            messageDiv.innerHTML = messageContent;
             chatHistory.appendChild(messageDiv);
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
@@ -259,7 +276,8 @@
                 const data = await response.json();
                 
                 if (data.response) {
-                    addMessage('assistant', data.response);
+                    // Pass confidence score to addMessage
+                    addMessage('assistant', data.response, data.confidence);
                 } else {
                     throw new Error('Invalid response format');
                 }
