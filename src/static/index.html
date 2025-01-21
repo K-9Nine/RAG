@@ -5,21 +5,9 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 1200px;
+            max-width: 800px;
             margin: 20px auto;
             padding: 0 20px;
-            display: flex;
-            flex-direction: column;
-        }
-        .container {
-            display: flex;
-            gap: 20px;
-        }
-        .left-panel {
-            flex: 1;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
         }
         .chat-container {
             margin-top: 20px;
@@ -27,12 +15,31 @@
             border: 1px solid #ddd;
             border-radius: 5px;
         }
+        #chatHistory {
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .chat-input {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
         textarea {
             width: 100%;
-            margin: 10px 0;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
+            resize: vertical;
+        }
+        select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
         }
         button {
             padding: 8px 16px;
@@ -44,24 +51,6 @@
         }
         button:hover {
             background-color: #0056b3;
-        }
-        .result-item {
-            margin: 10px 0;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        #chatHistory {
-            height: 300px;
-            overflow-y: auto;
-            margin-bottom: 10px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .chat-message {
-            margin: 5px 0;
-            padding: 5px;
         }
         .user-message {
             background-color: #e3f2fd;
@@ -75,54 +64,35 @@
             padding: 8px;
             margin: 5px 0;
         }
+        .category-label {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 4px;
+        }
     </style>
 </head>
 <body>
     <h1>Support Assistant</h1>
 
-    <div class="container">
-        <div class="left-panel">
-            <h3>Support Categories</h3>
-            <select id="searchCategory" style="margin-bottom: 10px; width: 100%; padding: 8px;">
-                <option value="all">All Categories</option>
+    <div class="chat-container">
+        <div id="chatHistory"></div>
+        <div class="chat-input">
+            <div class="category-label">Select Support Category:</div>
+            <select id="supportCategory">
                 <option value="phone">Phone System</option>
                 <option value="fibre">Fibre Leased Line</option>
                 <option value="email">Email</option>
-                <option value="mobile">Mobile</option>
+                <option value="broadband">Broadband</option>
             </select>
-            <input type="text" id="searchInput" style="width: 100%; padding: 8px;" placeholder="Search support documents...">
-            <button onclick="search()" style="margin-top: 10px; width: 100%;">Search</button>
-            <div id="searchResults"></div>
+            <textarea id="userInput" rows="3" placeholder="Type your question here..."></textarea>
+            <button onclick="sendMessage()">Send Message</button>
         </div>
     </div>
 
-    <div class="chat-container">
-        <h3>Chat with Support Assistant</h3>
-        <div id="chatHistory"></div>
-        <textarea id="userInput" rows="3" placeholder="Ask a question about our services..."></textarea>
-        <button onclick="sendMessage()">Send</button>
-    </div>
-
     <script>
-        function search() {
-            const query = document.getElementById('searchInput').value;
-            const category = document.getElementById('searchCategory').value;
-            
-            fetch(`/search?q=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}`)
-                .then(response => response.json())
-                .then(data => {
-                    const resultsDiv = document.getElementById('searchResults');
-                    resultsDiv.innerHTML = data.map(item => 
-                        `<div class="result-item">
-                            <p>${item.text}</p>
-                            <p><small>Category: ${item.category}</small></p>
-                        </div>`
-                    ).join('');
-                });
-        }
-
         function sendMessage() {
             const userInput = document.getElementById('userInput');
+            const category = document.getElementById('supportCategory').value;
             const message = userInput.value.trim();
             
             if (!message) return;
@@ -131,13 +101,16 @@
             addToChatHistory('user', message);
             userInput.value = '';
             
-            // Send to backend
+            // Send to backend with category
             fetch('/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ message: message })
+                body: JSON.stringify({ 
+                    message: message,
+                    category: category
+                })
             })
             .then(response => response.json())
             .then(data => {
@@ -152,7 +125,7 @@
         function addToChatHistory(role, message) {
             const chatHistory = document.getElementById('chatHistory');
             const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message ${role}-message`;
+            messageDiv.className = `${role}-message`;
             messageDiv.textContent = message;
             chatHistory.appendChild(messageDiv);
             chatHistory.scrollTop = chatHistory.scrollHeight;
