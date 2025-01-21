@@ -35,7 +35,7 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/")
 async def read_root():
-    return FileResponse('static/index.html')
+    return FileResponse("src/static/index.html")
 
 @app.get("/search/")
 async def search_docs(
