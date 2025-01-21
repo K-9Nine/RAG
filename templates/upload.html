@@ -185,20 +185,41 @@
             const successMessage = document.getElementById('successMessage');
             const errorMessage = document.getElementById('errorMessage');
             
+            // Validate inputs
+            if (!content) {
+                errorMessage.textContent = "Content is required";
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+                return;
+            }
+            if (!metadata) {
+                errorMessage.textContent = "Metadata is required";
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+                return;
+            }
+            if (!category) {
+                errorMessage.textContent = "Category is required";
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+                return;
+            }
+            
             try {
+                console.log('Sending data:', { category, content, metadata });
+                
+                const formData = new FormData();
+                formData.append('category', category);
+                formData.append('content', content);
+                formData.append('metadata', metadata);
+                
                 const response = await fetch('/upload', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams({
-                        category: category,
-                        content: content,
-                        metadata: metadata
-                    })
+                    body: formData
                 });
                 
                 const result = await response.json();
+                console.log('Server response:', result);
                 
                 if (response.ok && result.status === 'success') {
                     successMessage.textContent = result.message;
@@ -216,6 +237,7 @@
                     throw new Error(result.message || 'Upload failed');
                 }
             } catch (error) {
+                console.error('Upload error:', error);
                 errorMessage.textContent = error.message;
                 errorMessage.style.display = 'block';
                 successMessage.style.display = 'none';

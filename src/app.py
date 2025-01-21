@@ -239,16 +239,29 @@ class DocumentUpload(BaseModel):
 async def upload_document(request: Request):
     """Process and upload a document with RAG optimization"""
     try:
-        # Get form data
+        # Get form data and print for debugging
         form_data = await request.form()
-        content = form_data.get('content')
-        metadata = form_data.get('metadata')
-        category = form_data.get('category')
+        print("Received form data:", dict(form_data))
+        
+        content = form_data.get('content', '')
+        metadata = form_data.get('metadata', '')
+        category = form_data.get('category', '')
 
-        if not all([content, metadata, category]):
+        # Validate inputs
+        if not content:
             return JSONResponse(
                 status_code=400,
-                content={"status": "error", "message": "Missing required fields"}
+                content={"status": "error", "message": "Content is required"}
+            )
+        if not metadata:
+            return JSONResponse(
+                status_code=400,
+                content={"status": "error", "message": "Metadata is required"}
+            )
+        if not category:
+            return JSONResponse(
+                status_code=400,
+                content={"status": "error", "message": "Category is required"}
             )
 
         # Clean the text
@@ -261,6 +274,8 @@ async def upload_document(request: Request):
         client = weaviate.Client(
             url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
         )
+        
+        print(f"Uploading document: {len(chunks)} chunks")
         
         # Upload each chunk with metadata
         batch = client.batch.configure(batch_size=100)
@@ -289,7 +304,7 @@ async def upload_document(request: Request):
         )
             
     except Exception as e:
-        print(f"Upload error: {str(e)}")  # Add logging
+        print(f"Upload error: {str(e)}")
         return JSONResponse(
             status_code=500,
             content={"status": "error", "message": str(e)}
