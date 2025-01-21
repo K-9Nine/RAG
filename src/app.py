@@ -239,8 +239,10 @@ class DocumentUpload(BaseModel):
 async def upload_document(request: Request):
     """Process and upload a document with RAG optimization"""
     try:
-        # Get form data
+        # Get form data and print for debugging
         form_data = await request.form()
+        print("Received form data:", dict(form_data))
+        
         content = form_data.get('content', '')
         metadata = form_data.get('metadata', '')
         category = form_data.get('category', '')
@@ -263,24 +265,35 @@ async def upload_document(request: Request):
         )
         
         print(f"Uploading document: {len(chunks)} chunks")
+        print(f"Category: {category}")
+        print(f"Metadata: {metadata}")
         
-        # Upload each chunk with proper data types
-        batch = client.batch.configure(batch_size=100)
-        with batch:
-            for i, chunk in enumerate(chunks):
+        # Upload each chunk with explicit property types
+        for i, chunk in enumerate(chunks):
+            try:
+                # Create properties with explicit types
                 properties = {
-                    "content": chunk,
-                    "metadata": f"{metadata} (part {i+1}/{len(chunks)})",
-                    "category": category,
-                    "originalMetadata": metadata,
-                    "chunkIndex": i,  # Ensure integer
-                    "totalChunks": len(chunks)  # Ensure integer
+                    "content": str(chunk),
+                    "metadata": str(metadata),
+                    "category": str(category),
+                    "originalMetadata": str(metadata),
+                    "chunkIndex": int(i),
+                    "totalChunks": int(len(chunks))
                 }
                 
-                client.batch.add_data_object(
+                print(f"Adding chunk {i+1}/{len(chunks)} with properties:", properties)
+                
+                # Add document directly instead of using batch
+                client.data_object.create(
                     data_object=properties,
                     class_name="SupportDocs"
                 )
+                
+            except Exception as e:
+                print(f"Error adding chunk {i}: {str(e)}")
+                raise e
+        
+        print("Upload completed successfully")
         
         return JSONResponse(
             content={
