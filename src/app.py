@@ -367,6 +367,8 @@ async def get_documents():
             url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
         )
         
+        print("Fetching documents from Weaviate...")
+        
         result = (
             client.query
             .get("SupportDocs", ["content", "metadata", "category", "originalMetadata", "chunkIndex", "totalChunks"])
@@ -374,37 +376,56 @@ async def get_documents():
             .do()
         )
         
-        if result and "data" in result and "Get" in result["data"] and "SupportDocs" in result["data"]["Get"]:
-            # Group chunks by original metadata
-            documents = {}
-            for doc in result["data"]["Get"]["SupportDocs"]:
-                key = f"{doc['originalMetadata']}_{doc['category']}"
+        print("Query result:", result)  # Debug print
+        
+        if not result or "data" not in result or "Get" not in result["data"] or "SupportDocs" not in result["data"]["Get"]:
+            print("No documents found")
+            return {"documents": []}
+            
+        # Group chunks by original metadata and category
+        documents = {}
+        for doc in result["data"]["Get"]["SupportDocs"]:
+            try:
+                key = f"{doc.get('originalMetadata', '')}_{doc.get('category', '')}"
+                chunk_index = doc.get('chunkIndex', 0)
+                
                 if key not in documents:
                     documents[key] = {
-                        "content": [],
-                        "metadata": doc['originalMetadata'],
-                        "category": doc['category'],
-                        "id": doc['_additional']['id'],
-                        "chunks": doc['totalChunks']
+                        "content": [""] * doc.get('totalChunks', 1),  # Initialize with empty strings
+                        "metadata": doc.get('originalMetadata', ''),
+                        "category": doc.get('category', ''),
+                        "id": doc.get('_additional', {}).get('id', ''),
+                        "chunks": doc.get('totalChunks', 1)
                     }
-                documents[key]["content"].insert(doc['chunkIndex'], doc['content'])
-            
-            # Combine chunks and format for display
-            formatted_docs = []
-            for doc in documents.values():
+                
+                # Place chunk in correct position
+                if 0 <= chunk_index < len(documents[key]["content"]):
+                    documents[key]["content"][chunk_index] = doc.get('content', '')
+                
+            except Exception as e:
+                print(f"Error processing document: {str(e)}")
+                continue
+        
+        # Combine chunks and format for display
+        formatted_docs = []
+        for doc in documents.values():
+            try:
                 formatted_docs.append({
                     "id": doc["id"],
-                    "content": " ".join(doc["content"]),
+                    "content": " ".join(filter(None, doc["content"])),  # Filter out empty chunks
                     "metadata": doc["metadata"],
                     "category": doc["category"],
                     "chunks": doc["chunks"]
                 })
-                
-            return {"documents": formatted_docs}
-            
-        return {"documents": []}
+            except Exception as e:
+                print(f"Error formatting document: {str(e)}")
+                continue
+        
+        print(f"Returning {len(formatted_docs)} documents")
+        return {"documents": formatted_docs}
             
     except Exception as e:
+        print(f"Error in get_documents: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/delete/{doc_id}")
