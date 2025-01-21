@@ -9,6 +9,7 @@ from pathlib import Path
 from openai import OpenAI
 import httpx
 from src.utils.document_processor import DocumentProcessor, Category
+from fastapi.middleware.cors import CORSMiddleware
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -28,7 +29,7 @@ print(f"Weaviate URL: {os.getenv('WEAVIATE_URL', 'http://weaviate:8080')}")
 static_dir = Path(__file__).parent.parent / "static"
 if not static_dir.exists():
     static_dir.mkdir(parents=True)
-app.mount("/static", StaticFiles(directory=str(static_dir.absolute())), name="static")
+app.mount("/static", StaticFiles(directory="src/static"), name="static")
 
 # Initialize templates
 templates = Jinja2Templates(directory="templates")
