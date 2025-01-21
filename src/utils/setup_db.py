@@ -211,6 +211,59 @@ def setup_database():
             "content": "CallSwitch Short Codes: Configure Short Code keys using administrator-provided commands. Access via Short Code Tab in Line Key Configuration. Select command to assign to key.",
             "metadata": '{"type": "voip", "category": "configuration", "device": "callswitch", "subcategory": "short-codes"}'
         },
+        # Adding UCaaS Product Documents
+        {
+            "content": "UCaaS Overview: Advanced UCaaS License provides comprehensive communication solution integrating cloud telephony, video meetings, team messaging, and file sharing. Supports CRM integration and cloud storage.",
+            "category": "phone",
+            "metadata": '{"type": "ucaas", "category": "overview", "subcategory": "features"}'
+        },
+        {
+            "content": "UCaaS Communication Features: Access via mobile, desktop, and web apps. Includes plug & play IP handsets, voice/video calls, and messaging. Users can seamlessly switch between communication methods.",
+            "category": "phone",
+            "metadata": '{"type": "ucaas", "category": "features", "subcategory": "communication"}'
+        },
+        {
+            "content": "UCaaS Call Routing: Drag-and-drop call flow management with multi-level IVR menus, call queues, ring groups, time-of-day routing, on-hold music, and voicemail-to-email functionality.",
+            "category": "phone",
+            "metadata": '{"type": "ucaas", "category": "features", "subcategory": "call-routing"}'
+        },
+        {
+            "content": "UCaaS Productivity Tools: Host audio/video conferences, use instant messaging, share files, and conduct video meetings with screen sharing and participant management features.",
+            "category": "phone",
+            "metadata": '{"type": "ucaas", "category": "features", "subcategory": "productivity"}'
+        },
+        {
+            "content": "UCaaS Analytics: Live wallboards show real-time metrics (call wait times, abandonment rates). Includes scheduled reporting for KPI tracking and call supervision tools (listen, whisper, barge).",
+            "category": "phone",
+            "metadata": '{"type": "ucaas", "category": "features", "subcategory": "analytics"}'
+        },
+        
+        # Adding CallSwitch One iOS App Documents
+        {
+            "content": "CallSwitch One iOS App Overview: Mobile app enables iPhone to function as work phone extension. Manage calls, messages, files, and settings remotely. Access through iPhone app store.",
+            "category": "phone",
+            "metadata": '{"type": "mobile", "category": "overview", "platform": "ios", "app": "callswitch"}'
+        },
+        {
+            "content": "CallSwitch iOS Call Handling: Open app to keypad for direct dialing. Access History for call logs (missed/received/made). Use Contacts for internal users and device contacts with Filter option for categories.",
+            "category": "phone",
+            "metadata": '{"type": "mobile", "category": "calls", "platform": "ios", "app": "callswitch"}'
+        },
+        {
+            "content": "CallSwitch iOS In-Call Features: During calls - Mute microphone, use Keypad for DTMF/short codes, toggle Speaker, add second call. Place calls on Hold or transfer to contacts.",
+            "category": "phone",
+            "metadata": '{"type": "mobile", "category": "features", "platform": "ios", "app": "callswitch"}'
+        },
+        {
+            "content": "CallSwitch iOS Call Transfer: Press Transfer, select contact or enter external number. Default is unattended transfer. Enable attended (supervised) transfers in Settings > Calls.",
+            "category": "phone",
+            "metadata": '{"type": "mobile", "category": "transfers", "platform": "ios", "app": "callswitch"}'
+        },
+        {
+            "content": "CallSwitch iOS Device Linking: Connect to desktop/browser version through My Devices. Use QR code icon to log in at callswitchone.app.",
+            "category": "phone",
+            "metadata": '{"type": "mobile", "category": "setup", "platform": "ios", "app": "callswitch", "feature": "linking"}'
+        }
     ]
 
     processor = DocumentProcessor()
