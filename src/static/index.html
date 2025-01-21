@@ -59,7 +59,7 @@
     <h1>RAG Interface</h1>
 
     <!-- Search Section -->
-    <div class="section">
+    <div>
         <h3>Search</h3>
         <input type="text" id="searchInput" style="width: 100%; padding: 5px;">
         <button onclick="search()">Search</button>
@@ -67,7 +67,7 @@
     </div>
 
     <!-- Upload Section -->
-    <div class="section">
+    <div>
         <h3>Upload Document</h3>
         <textarea id="uploadText" rows="5"></textarea>
         <select id="uploadCategory">
@@ -115,7 +115,6 @@
     </div>
 
     <script>
-        // Existing search function
         function search() {
             const query = document.getElementById('searchInput').value;
             fetch(`/search?q=${encodeURIComponent(query)}`)
@@ -132,7 +131,6 @@
                 });
         }
 
-        // Existing upload function
         function uploadDocument() {
             const text = document.getElementById('uploadText').value;
             const category = document.getElementById('uploadCategory').value;

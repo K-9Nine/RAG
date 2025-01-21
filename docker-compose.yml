@@ -7,7 +7,7 @@ services:
       - "8088:8000"
     volumes:
       - .:/app
-      - ./static:/app/static
+      - ./src/static:/app/static
       - ./templates:/app/templates
     environment:
       - WEAVIATE_URL=http://weaviate:8080
