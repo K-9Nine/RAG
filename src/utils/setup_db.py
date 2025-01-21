@@ -635,6 +635,550 @@ def setup_test_docs():
             "content": "Custom Short Codes: Create custom codes in Voice > Config > Short Codes. Assign to specific features or external numbers. Maximum 6 digits.",
             "category": "phone",
             "metadata": '{"type": "feature", "category": "short-codes", "product": "callswitch", "feature": "custom"}'
+        },
+
+        # Adding Call Transfer Features
+        {
+            "content": "Call Transfer Overview: Transfer calls between users, departments, or external numbers. Choose between attended (supervised) and blind transfers. Available on all devices.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "transfer", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Blind Transfer Process: Press Transfer button, dial destination number or select contact, press Transfer again. Call transfers immediately without consultation.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "transfer", "product": "callswitch", "feature": "blind"}'
+        },
+        {
+            "content": "Attended Transfer: Press Transfer, dial number or select contact, wait for answer and announce call. Press Transfer to complete or Cancel to return.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "transfer", "product": "callswitch", "feature": "attended"}'
+        },
+
+        # Adding Conference Call Features
+        {
+            "content": "Conference Call Setup: Start with first caller, press Conference button, add second caller. Repeat for additional participants. Maximum 10 participants per conference.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "conference", "product": "callswitch", "feature": "setup"}'
+        },
+        {
+            "content": "Conference Controls: Host can mute participants, remove callers, or end conference. Participants can mute themselves or exit conference at any time.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "conference", "product": "callswitch", "feature": "controls"}'
+        },
+        {
+            "content": "Conference Scheduling: Schedule conferences through dashboard. Send invites with dial-in details. Optional PIN protection for secure meetings.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "conference", "product": "callswitch", "feature": "scheduling"}'
+        },
+
+        # Adding Video Meeting Features
+        {
+            "content": "Video Meeting Overview: Host video conferences with screen sharing and chat. Access through desktop app, mobile app, or web browser. No software required for guests.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "video", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Video Controls: Toggle camera/microphone, share screen, chat with participants. Host can mute all, remove participants, or lock meeting.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "video", "product": "callswitch", "feature": "controls"}'
+        },
+        {
+            "content": "Video Recording: Host can record meetings with participant consent. Recordings available in dashboard for 30 days. Download or share via secure link.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "video", "product": "callswitch", "feature": "recording"}'
+        },
+
+        # Adding SMS Features
+        {
+            "content": "SMS Overview: Send individual or bulk SMS messages. Track delivery status and responses. Available through dashboard, desktop app, or mobile app.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "sms", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Bulk SMS: Upload recipient list (CSV) or select contact groups. Preview message and cost. Schedule sending time. Maximum 20,000 recipients per campaign.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "sms", "product": "callswitch", "feature": "bulk"}'
+        },
+        {
+            "content": "SMS Templates: Create and save message templates. Use variables for personalization. Share templates across team for consistent messaging.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "sms", "product": "callswitch", "feature": "templates"}'
+        },
+
+        # Adding Call Forwarding Features
+        {
+            "content": "Call Forward Overview: Redirect calls to another number or voicemail. Set up different rules for busy/no answer scenarios. Configure through dashboard or phone.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "forwarding", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Forward Always Setup: Dial *72 followed by destination number to enable. Dial *73 to disable. All calls redirect immediately to specified number.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "forwarding", "product": "callswitch", "feature": "always"}'
+        },
+        {
+            "content": "Forward on Busy/No Answer: Configure in dashboard under Voice > Users > Call Forward. Set different numbers for busy (*90/*91) and no answer (*92/*93).",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "forwarding", "product": "callswitch", "feature": "conditional"}'
+        },
+
+        # Adding Hunt Group Features
+        {
+            "content": "Hunt Group Overview: Distribute calls across team members. Multiple routing strategies available. Configure overflow handling and voicemail options.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "hunt-group", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Hunt Group Routing: Choose Sequential (in order), Circular (round robin), or Simultaneous (ring all). Set ring time before moving to next member.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "hunt-group", "product": "callswitch", "feature": "routing"}'
+        },
+        {
+            "content": "Hunt Group Management: Add/remove members through dashboard. Set business hours and holiday schedules. Configure overflow destination for busy periods.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "hunt-group", "product": "callswitch", "feature": "management"}'
+        },
+
+        # Adding Presence Features
+        {
+            "content": "Presence Overview: Monitor team member availability in real-time. Status updates automatically with calls or can be set manually. Visible across all devices.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "presence", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Presence States: Available, On Call, Do Not Disturb, Away, Offline. Custom status messages supported. Integration with calendar for automatic updates.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "presence", "product": "callswitch", "feature": "states"}'
+        },
+        {
+            "content": "Presence Monitoring: View team status through BLF keys on phones or in apps. Click to call available users. Presence history in analytics reports.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "presence", "product": "callswitch", "feature": "monitoring"}'
+        },
+
+        # Adding Emergency Features
+        {
+            "content": "Emergency Call Setup: Configure emergency numbers and locations in dashboard. Set up notifications for emergency calls. Update locations for remote workers.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "emergency", "product": "callswitch", "feature": "setup"}'
+        },
+        {
+            "content": "Emergency Notifications: Alert specified contacts when emergency numbers dialed. Include caller location and timestamp. Optional recording of emergency calls.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "emergency", "product": "callswitch", "feature": "notifications"}'
+        },
+        {
+            "content": "Emergency Location Management: Register and update emergency locations through dashboard. Required for remote workers and hot desk users. Regular validation recommended.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "emergency", "product": "callswitch", "feature": "locations"}'
+        },
+
+        # Adding Phone Hardware Features
+        {
+            "content": "Supported Phone Models: Compatible with Yealink T4x, T5x series, Polycom VVX series, and Cisco SPA phones. Auto-provisioning available for supported models.",
+            "category": "phone",
+            "metadata": '{"type": "hardware", "category": "phones", "product": "callswitch", "feature": "models"}'
+        },
+        {
+            "content": "Phone Provisioning: Add phones through MAC address in dashboard. Select model and user assignment. Configuration pushes automatically to device.",
+            "category": "phone",
+            "metadata": '{"type": "hardware", "category": "phones", "product": "callswitch", "feature": "provisioning"}'
+        },
+        {
+            "content": "Phone Settings: Configure display language, timezone, ringtones, and screen brightness. Manage through dashboard or phone menu. Changes apply immediately.",
+            "category": "phone",
+            "metadata": '{"type": "hardware", "category": "phones", "product": "callswitch", "feature": "settings"}'
+        },
+
+        # Adding Network Requirements
+        {
+            "content": "Bandwidth Requirements: Minimum 100Kbps up/down per concurrent call. QoS recommended for voice traffic. Stable internet connection required.",
+            "category": "phone",
+            "metadata": '{"type": "network", "category": "requirements", "product": "callswitch", "feature": "bandwidth"}'
+        },
+        {
+            "content": "Network Configuration: Open ports 5060-5061 (SIP), 10000-20000 (RTP). Configure firewall for SIP ALG. DHCP reservation recommended for phones.",
+            "category": "phone",
+            "metadata": '{"type": "network", "category": "requirements", "product": "callswitch", "feature": "ports"}'
+        },
+        {
+            "content": "QoS Settings: Prioritize voice traffic (DSCP 46). Mark SIP signaling (DSCP 26). Configure VLAN for voice if available. Monitor jitter and latency.",
+            "category": "phone",
+            "metadata": '{"type": "network", "category": "requirements", "product": "callswitch", "feature": "qos"}'
+        },
+
+        # Adding Security Features
+        {
+            "content": "Password Policy: Minimum 8 characters, mix of upper/lower case, numbers, symbols. Regular password changes enforced. Failed login lockout protection.",
+            "category": "phone",
+            "metadata": '{"type": "security", "category": "authentication", "product": "callswitch", "feature": "passwords"}'
+        },
+        {
+            "content": "Call Encryption: TLS for signaling, SRTP for media. Certificate-based authentication. End-to-end encryption for internal calls.",
+            "category": "phone",
+            "metadata": '{"type": "security", "category": "encryption", "product": "callswitch", "feature": "calls"}'
+        },
+        {
+            "content": "Access Control: Role-based access control (RBAC). IP address restrictions available. Two-factor authentication support. Audit logging of all changes.",
+            "category": "phone",
+            "metadata": '{"type": "security", "category": "authentication", "product": "callswitch", "feature": "access"}'
+        },
+
+        # Adding Troubleshooting Guides
+        {
+            "content": "Audio Issues: Check microphone/speaker settings. Verify network connection. Test with different devices. Monitor call quality metrics in dashboard.",
+            "category": "phone",
+            "metadata": '{"type": "support", "category": "troubleshooting", "product": "callswitch", "feature": "audio"}'
+        },
+        {
+            "content": "Connection Problems: Verify internet connectivity. Check phone power and network cable. Confirm phone registration status. Test alternate network if available.",
+            "category": "phone",
+            "metadata": '{"type": "support", "category": "troubleshooting", "product": "callswitch", "feature": "connection"}'
+        },
+        {
+            "content": "Login Issues: Verify username/password. Clear browser cache for web app. Check account status in dashboard. Contact support for account lockouts.",
+            "category": "phone",
+            "metadata": '{"type": "support", "category": "troubleshooting", "product": "callswitch", "feature": "login"}'
+        },
+
+        # Adding Wallboard Features
+        {
+            "content": "Wallboard Overview: Real-time display of call center metrics. Customizable layouts and KPIs. Available on large screens or web browsers.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "wallboard", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Wallboard Metrics: Monitor calls waiting, average wait time, abandoned calls, agent status, SLA compliance. Historical comparisons available.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "wallboard", "product": "callswitch", "feature": "metrics"}'
+        },
+        {
+            "content": "Wallboard Customization: Choose metrics to display, set thresholds for alerts, customize colors and layouts. Create multiple views for different teams.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "wallboard", "product": "callswitch", "feature": "customization"}'
+        },
+
+        # Adding Call Quality Monitoring
+        {
+            "content": "Quality Monitoring Overview: Track call quality metrics in real-time. Monitor jitter, packet loss, latency, and MOS scores. Identify network issues.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "quality", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Quality Metrics: MOS score (1-5 scale), jitter (<30ms ideal), packet loss (<1% target), latency (<150ms preferred). View in dashboard analytics.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "quality", "product": "callswitch", "feature": "metrics"}'
+        },
+        {
+            "content": "Quality Alerts: Set thresholds for quality metrics. Receive notifications for poor quality calls. Generate reports for trend analysis.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "quality", "product": "callswitch", "feature": "alerts"}'
+        },
+
+        # Adding Supervisor Features
+        {
+            "content": "Supervisor Overview: Monitor agent activity, listen to calls, provide assistance. Access real-time metrics and historical reports.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "supervisor", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Call Monitoring: Listen to active calls silently. Whisper mode for agent coaching. Barge in for urgent situations. Record calls for training.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "supervisor", "product": "callswitch", "feature": "monitoring"}'
+        },
+        {
+            "content": "Agent Management: View agent status and statistics. Adjust queue assignments. Monitor break times and schedule adherence.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "supervisor", "product": "callswitch", "feature": "management"}'
+        },
+
+        # Adding Call Center Reports
+        {
+            "content": "Report Types: Agent performance, queue statistics, call outcomes, quality metrics. Daily, weekly, monthly views available. Export to CSV/PDF.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "reports", "product": "callswitch", "feature": "types"}'
+        },
+        {
+            "content": "Scheduled Reports: Set up automated report delivery. Choose recipients, frequency, and format. Store historical data for trend analysis.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "reports", "product": "callswitch", "feature": "scheduling"}'
+        },
+        {
+            "content": "Custom Reports: Build custom reports with specific metrics. Filter by date, queue, agent, or outcome. Save templates for future use.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "reports", "product": "callswitch", "feature": "custom"}'
+        },
+
+        # Adding Calendar Integration Features
+        {
+            "content": "Calendar Overview: Integrate with Microsoft 365 or Google Calendar. Sync availability status, schedule calls and meetings. Automatic presence updates.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "calendar", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Calendar Setup: Connect account through OAuth. Grant calendar access permissions. Select sync frequency and event types to include.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "calendar", "product": "callswitch", "feature": "setup"}'
+        },
+        {
+            "content": "Calendar Features: Schedule video meetings, set availability, block busy times. Click-to-join conference calls. Meeting reminders across devices.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "calendar", "product": "callswitch", "feature": "features"}'
+        },
+
+        # Adding Directory Integration
+        {
+            "content": "Directory Overview: Sync with Active Directory or LDAP. Automatic user provisioning and deprovisioning. Keep contact details updated.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "directory", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Directory Sync: Configure connection details and credentials. Select sync schedule and attributes. Handle conflicts and deletions.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "directory", "product": "callswitch", "feature": "sync"}'
+        },
+        {
+            "content": "Directory Management: Map AD fields to user properties. Set up group-based permissions. Monitor sync status and errors.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "directory", "product": "callswitch", "feature": "management"}'
+        },
+
+        # Adding Single Sign-On (SSO)
+        {
+            "content": "SSO Overview: Support for SAML 2.0 and OAuth 2.0. Integrate with major identity providers. Simplify login across applications.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "sso", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "SSO Configuration: Set up identity provider details. Configure assertion mapping. Test authentication flow. Enable MFA if required.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "sso", "product": "callswitch", "feature": "configuration"}'
+        },
+        {
+            "content": "SSO Management: Monitor authentication attempts. Set password policies. Configure session timeouts. Handle failed login attempts.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "sso", "product": "callswitch", "feature": "management"}'
+        },
+
+        # Adding API Integration
+        {
+            "content": "API Overview: RESTful API for custom integrations. Manage calls, users, and settings programmatically. Webhook support for events.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "api", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "API Authentication: Generate API keys in dashboard. Use Bearer token authentication. Rate limiting and usage monitoring.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "api", "product": "callswitch", "feature": "authentication"}'
+        },
+        {
+            "content": "API Endpoints: Call control, user management, reporting, and configuration endpoints. Swagger documentation available. Example code provided.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "api", "product": "callswitch", "feature": "endpoints"}'
+        },
+
+        # Adding Compliance Features
+        {
+            "content": "Compliance Overview: Meet regulatory requirements for call recording, data protection, and security. Support for GDPR, HIPAA, and PCI compliance.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "compliance", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Data Protection: Encrypt sensitive data at rest and in transit. Set retention policies for recordings and logs. Regular security audits.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "compliance", "product": "callswitch", "feature": "data-protection"}'
+        },
+        {
+            "content": "Audit Trails: Track all system changes and access attempts. Generate compliance reports. Monitor security events and policy violations.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "compliance", "product": "callswitch", "feature": "audit"}'
+        },
+
+        # Adding Disaster Recovery
+        {
+            "content": "Disaster Recovery Overview: Automatic failover between data centers. Regular backup of configuration and data. Business continuity planning.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "disaster-recovery", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Backup Procedures: Daily configuration backups. Call recording archives. Database replication across regions. Retention policy management.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "disaster-recovery", "product": "callswitch", "feature": "backup"}'
+        },
+        {
+            "content": "Service Continuity: Alternative routing during outages. Mobile app fallback options. Emergency contact procedures and escalation paths.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "disaster-recovery", "product": "callswitch", "feature": "continuity"}'
+        },
+
+        # Adding Training Resources
+        {
+            "content": "User Training: Online tutorials and documentation. Live webinar sessions. Custom training programs for specific features. Self-paced learning modules.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "training", "product": "callswitch", "feature": "user"}'
+        },
+        {
+            "content": "Admin Training: Advanced system configuration. User management best practices. Reporting and analytics workshops. Security training.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "training", "product": "callswitch", "feature": "admin"}'
+        },
+        {
+            "content": "Training Materials: Video tutorials, user guides, quick reference cards. Regular updates for new features. Multi-language support.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "training", "product": "callswitch", "feature": "materials"}'
+        },
+
+        # Adding Support Services
+        {
+            "content": "Support Tiers: 24/7 emergency support. Standard business hours for general inquiries. Premium support options with dedicated account manager.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "support", "product": "callswitch", "feature": "tiers"}'
+        },
+        {
+            "content": "Support Channels: Phone, email, chat, and ticket system. Remote assistance available. Knowledge base and community forums.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "support", "product": "callswitch", "feature": "channels"}'
+        },
+        {
+            "content": "Issue Resolution: Defined SLAs for different priority levels. Escalation procedures for critical issues. Regular status updates.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "support", "product": "callswitch", "feature": "resolution"}'
+        },
+
+        # Adding Mobile Device Management
+        {
+            "content": "MDM Overview: Manage mobile app deployment and security. Configure device policies. Remote wipe capability for lost devices.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "mdm", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Device Enrollment: Self-service enrollment process. Bulk enrollment options. Automatic configuration push. Support for iOS and Android.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "mdm", "product": "callswitch", "feature": "enrollment"}'
+        },
+        {
+            "content": "Security Policies: Enforce PIN codes, app restrictions, encryption. Control data sharing between apps. Monitor device compliance.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "mdm", "product": "callswitch", "feature": "security"}'
+        },
+
+        # Adding Analytics Features
+        {
+            "content": "Analytics Dashboard: Visual reports of call patterns, usage trends, and performance metrics. Customizable widgets and filters.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "analytics", "product": "callswitch", "feature": "dashboard"}'
+        },
+        {
+            "content": "Usage Analytics: Track feature adoption, call volumes, peak times. Monitor user activity and system utilization. Capacity planning tools.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "analytics", "product": "callswitch", "feature": "usage"}'
+        },
+        {
+            "content": "Performance Analytics: Monitor system health, network quality, user experience. Identify bottlenecks and optimization opportunities.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "analytics", "product": "callswitch", "feature": "performance"}'
+        },
+
+        # Adding Cost Management
+        {
+            "content": "Cost Overview: Track usage costs by department, user, or feature. Set budgets and alerts. Generate cost allocation reports.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "cost", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Billing Management: View detailed billing records. Export invoices and usage reports. Configure billing notifications and thresholds.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "cost", "product": "callswitch", "feature": "billing"}'
+        },
+        {
+            "content": "Cost Optimization: Identify cost-saving opportunities. Analyze usage patterns. Recommend plan adjustments based on actual usage.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "cost", "product": "callswitch", "feature": "optimization"}'
+        },
+
+        # Adding System Updates
+        {
+            "content": "Update Process: Regular feature updates and security patches. Scheduled maintenance windows. Automatic updates for desktop and mobile apps.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "updates", "product": "callswitch", "feature": "process"}'
+        },
+        {
+            "content": "Version Control: Track system versions across components. Rollback capability for critical issues. Beta testing program for new features.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "updates", "product": "callswitch", "feature": "versions"}'
+        },
+        {
+            "content": "Release Notes: Detailed documentation of changes and improvements. Known issues and workarounds. Upgrade instructions when needed.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "updates", "product": "callswitch", "feature": "notes"}'
+        },
+
+        # Adding Fax Integration
+        {
+            "content": "Fax Overview: Send and receive faxes through email or web interface. Store faxes digitally. Automatic OCR for searchable content.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "fax", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Fax to Email: Receive faxes as PDF attachments. Configure multiple email recipients. Archive faxes automatically.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "fax", "product": "callswitch", "feature": "email"}'
+        },
+        {
+            "content": "Fax Management: View fax history and status. Resend failed faxes. Set up cover page templates. Configure retention policies.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "fax", "product": "callswitch", "feature": "management"}'
+        },
+
+        # Adding Team Collaboration
+        {
+            "content": "Team Spaces: Create dedicated spaces for departments or projects. Share files and messages. Integrate with third-party tools.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "collaboration", "product": "callswitch", "feature": "spaces"}'
+        },
+        {
+            "content": "File Sharing: Secure file transfer between team members. Version control for documents. Integration with cloud storage.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "collaboration", "product": "callswitch", "feature": "files"}'
+        },
+        {
+            "content": "Team Chat: Group and direct messaging. Rich text formatting. Emoji and GIF support. Message threading and reactions.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "collaboration", "product": "callswitch", "feature": "chat"}'
+        },
+
+        # Adding Contact Center Features
+        {
+            "content": "Skills-based Routing: Route calls based on agent skills and proficiency. Define skill levels and priorities. Dynamic queue assignment.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "contact-center", "product": "callswitch", "feature": "skills"}'
+        },
+        {
+            "content": "Queue Callback: Offer callback options during high volume. Maintain queue position. Schedule callbacks for specific times.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "contact-center", "product": "callswitch", "feature": "callback"}'
+        },
+        {
+            "content": "Customer Surveys: Post-call satisfaction surveys. Custom survey questions. Automated survey delivery. Results analysis.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "contact-center", "product": "callswitch", "feature": "surveys"}'
+        },
+
+        # Adding Custom Integration
+        {
+            "content": "Webhook Integration: Configure webhooks for real-time events. Customize payload format. Monitor delivery status and retry failed webhooks.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "integration", "product": "callswitch", "feature": "webhooks"}'
+        },
+        {
+            "content": "Custom Fields: Add custom fields to user profiles and calls. Map data from external systems. Use in reports and routing rules.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "integration", "product": "callswitch", "feature": "fields"}'
+        },
+        {
+            "content": "Integration Builder: Visual tool for creating custom integrations. Pre-built templates for common systems. Test and debug tools.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "integration", "product": "callswitch", "feature": "builder"}'
         }
     ]
 
