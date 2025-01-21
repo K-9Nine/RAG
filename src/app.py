@@ -252,3 +252,27 @@ def delete_document():
             
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.post("/chat")
+async def chat(request: Request):
+    """Handle chat messages"""
+    try:
+        data = await request.json()
+        message = data.get("message")
+        category = data.get("category")
+        
+        if not message or not category:
+            raise HTTPException(status_code=400, detail="Message and category are required")
+
+        # Use the existing search function to get relevant context
+        search_results = await search_docs(query=message, category=category)
+        
+        # Return the response from search_docs
+        return {
+            "response": search_results.get("response", "I'm sorry, I couldn't find relevant information."),
+            "results": search_results.get("results", [])
+        }
+            
+    except Exception as e:
+        print(f"Chat error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
