@@ -6,7 +6,7 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 import weaviate
 import os
-from typing import Dict, Optional, List, Any
+from typing import Dict, Optional, List, Any, Tuple
 from pathlib import Path
 from openai import OpenAI
 import httpx
@@ -16,6 +16,7 @@ import re
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import json
 from datetime import datetime
+import numpy as np
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -1070,3 +1071,84 @@ async def cleanup_existing_data():
     except Exception as e:
         print(f"Error in cleanup_existing_data: {str(e)}")
         return {"error": str(e)}
+
+def calculate_confidence(
+    vector_score: float,
+    num_docs: int,
+    context_completeness: float
+) -> float:
+    """Calculate confidence score (0-1) based on multiple factors"""
+    # Normalize vector score (usually 0-1 already)
+    vec_weight = 0.5
+    doc_weight = 0.3
+    context_weight = 0.2
+    
+    # Document count score (peaks at 3-5 docs)
+    doc_score = min(num_docs / 3, 1.0)
+    
+    # Combine scores with weights
+    confidence = (
+        vector_score * vec_weight +
+        doc_score * doc_weight +
+        context_completeness * context_weight
+    )
+    
+    return round(confidence, 2)
+
+@app.post("/query")
+async def query_documents(query: str):
+    try:
+        # Get vector search results
+        results = client.query.get(
+            "SupportDocs",
+            ["content", "metadata", "category"]
+        ).with_near_text({
+            "concepts": [query]
+        }).with_additional(["distance"]).do()
+        
+        if not results.get("data", {}).get("Get", {}).get("SupportDocs"):
+            return {"answer": "I don't have enough information to answer that question.",
+                    "confidence": 0.0}
+            
+        # Extract relevant documents
+        docs = results["data"]["Get"]["SupportDocs"]
+        distances = [d["_additional"]["distance"] for d in docs]
+        
+        # Calculate vector similarity score (1 - normalized distance)
+        vector_score = 1 - min(distances) if distances else 0
+        
+        # Calculate context completeness
+        context_words = sum(len(d["content"].split()) for d in docs)
+        context_completeness = min(context_words / 100, 1.0)  # Normalize to 0-1
+        
+        # Generate answer using your existing logic
+        answer = generate_answer(query, docs)
+        
+        # Calculate confidence
+        confidence = calculate_confidence(
+            vector_score=vector_score,
+            num_docs=len(docs),
+            context_completeness=context_completeness
+        )
+        
+        confidence_label = get_confidence_label(confidence)
+        
+        return {
+            "answer": answer,
+            "confidence": confidence,
+            "confidence_label": confidence_label,
+            "sources": [d["content"] for d in docs[:3]]  # Top 3 sources
+        }
+        
+    except Exception as e:
+        print(f"Error in query_documents: {str(e)}")
+        return {"error": str(e)}
+
+def get_confidence_label(score: float) -> str:
+    """Convert confidence score to human-readable label"""
+    if score >= 0.8:
+        return "High Confidence"
+    elif score >= 0.5:
+        return "Medium Confidence"
+    else:
+        return "Low Confidence"

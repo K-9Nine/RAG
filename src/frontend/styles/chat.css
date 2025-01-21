@@ -1,0 +1,39 @@
+.confidence-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  margin-left: 8px;
+}
+
+.high-confidence {
+  background-color: #e6ffe6;
+  color: #006600;
+  border: 1px solid #00cc00;
+}
+
+.medium-confidence {
+  background-color: #fff5e6;
+  color: #804000;
+  border: 1px solid #ff9933;
+}
+
+.low-confidence {
+  background-color: #ffe6e6;
+  color: #990000;
+  border: 1px solid #ff3333;
+}
+
+.sources {
+  margin-top: 8px;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.sources details {
+  margin-left: 16px;
+}
+
+.sources ul {
+  margin-top: 4px;
+} 
