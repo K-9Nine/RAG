@@ -14,6 +14,8 @@ from src.utils.document_processor import DocumentProcessor, Category
 from fastapi.middleware.cors import CORSMiddleware
 import re
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+import json
+from datetime import datetime
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -634,6 +636,91 @@ async def diagnose_documents():
         print(f"Error in diagnose_documents: {str(e)}")
         return {"error": str(e), "traceback": str(e.__traceback__)}
 
+@app.get("/backup")
+async def backup_database():
+    """Backup all documents from the database"""
+    try:
+        client = weaviate.Client(
+            url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
+        )
+        
+        # Get all documents with all properties
+        result = (
+            client.query
+            .get("SupportDocs", [
+                "content", 
+                "metadata", 
+                "category", 
+                "originalMetadata", 
+                "chunkIndex", 
+                "totalChunks"
+            ])
+            .with_additional(["id"])
+            .do()
+        )
+        
+        if not result or "data" not in result or "Get" not in result["data"] or "SupportDocs" not in result["data"]["Get"]:
+            return {"status": "No documents found to backup"}
+            
+        docs = result["data"]["Get"]["SupportDocs"]
+        
+        # Create backup with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_file = f"backup_{timestamp}.json"
+        
+        with open(backup_file, 'w') as f:
+            json.dump(docs, f)
+        
+        return {
+            "status": "success",
+            "message": f"Backed up {len(docs)} documents to {backup_file}",
+            "document_count": len(docs)
+        }
+            
+    except Exception as e:
+        print(f"Error in backup_database: {str(e)}")
+        return {"error": str(e)}
+
+@app.post("/restore")
+async def restore_database(backup_file: str = Form(...)):
+    """Restore documents from a backup file"""
+    try:
+        # Load backup file
+        with open(backup_file, 'r') as f:
+            docs = json.load(f)
+        
+        client = weaviate.Client(
+            url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
+        )
+        
+        # Upload each document
+        restored_count = 0
+        for doc in docs:
+            try:
+                # Remove the _additional field if it exists
+                doc.pop('_additional', None)
+                
+                # Add document
+                client.data_object.create(
+                    data_object=doc,
+                    class_name="SupportDocs"
+                )
+                restored_count += 1
+                
+            except Exception as e:
+                print(f"Error restoring document: {str(e)}")
+                continue
+        
+        return {
+            "status": "success",
+            "message": f"Restored {restored_count} documents",
+            "restored_count": restored_count
+        }
+            
+    except Exception as e:
+        print(f"Error in restore_database: {str(e)}")
+        return {"error": str(e)}
+
 @app.get("/cleanup")
 async def cleanup_database():
     """Clean up and reinitialize the database"""
@@ -642,7 +729,12 @@ async def cleanup_database():
             url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
         )
         
-        # Delete the existing class
+        # First backup existing data
+        backup_result = await backup_database()
+        if "error" in backup_result:
+            return {"status": "error", "message": "Failed to backup existing data", "error": backup_result["error"]}
+        
+        # Then proceed with cleanup
         try:
             client.schema.delete_class("SupportDocs")
             print("Deleted existing SupportDocs class")
@@ -688,20 +780,15 @@ async def cleanup_database():
             ]
         }
         
-        # Create schema and verify
         client.schema.create_class(class_obj)
         print("Created new SupportDocs class")
-        
-        # Verify schema was created correctly
-        new_schema = client.schema.get()
-        print("New schema:", new_schema)
         
         return {
             "status": "success",
             "message": "Database cleaned up and reinitialized",
-            "schema": new_schema
+            "backup": backup_result
         }
             
     except Exception as e:
         print(f"Error in cleanup_database: {str(e)}")
-        return {"error": str(e), "traceback": str(e.__traceback__)}
+        return {"error": str(e)}
