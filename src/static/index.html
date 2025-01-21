@@ -1,215 +1,280 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Support Assistant</title>
+    <title>IT Support Assistant</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background-color: #f0f2f5;
-        }
-
-        .header {
-            background-color: rgb(64,147,54);
-            padding: 10px 16px;
-            display: flex;
-            align-items: center;
-            height: 60px;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .header h1 {
-            color: white;
-            font-size: 1.2rem;
-            font-weight: 500;
-        }
-
-        .main-container {
-            max-width: 1000px;
-            margin: 60px auto 0;
-            flex: 1;
-            display: flex;
-            background-color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            height: calc(100vh - 60px);
-        }
-
-        .chat-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: #efeae2;
-            background-image: url("data:image/svg+xml,%3Csvg width='64' height='64' viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8 16c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm0-2c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6 2.686 6 6 6zm33.414-6l5.95-5.95L45.95.636 40 6.586 34.05.636 32.636 2.05 38.586 8l-5.95 5.95 1.414 1.414L40 9.414l5.95 5.95 1.414-1.414L41.414 8zM40 48c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm0-2c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6 2.686 6 6 6zM9.414 40l5.95-5.95-1.414-1.414L8 38.586l-5.95-5.95L.636 34.05 6.586 40l-5.95 5.95 1.414 1.414L8 41.414l5.95 5.95 1.414-1.414L9.414 40z' fill='rgba(0,0,0,0.05)' fill-rule='evenodd'/%3E%3C/svg%3E");
-        }
-
-        #chatHistory {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
-
-        .message-container {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .user-message, .assistant-message {
-            padding: 8px 12px;
-            margin: 4px 0;
-            max-width: 75%;
-            border-radius: 8px;
-            position: relative;
-            word-wrap: break-word;
-        }
-
-        .user-message {
-            background-color: rgb(93,252,245);
-            align-self: flex-end;
-            margin-left: auto;
-        }
-
-        .assistant-message {
-            background-color: white;
-            align-self: flex-start;
-        }
-
-        .input-area {
-            background-color: #f0f0f0;
-            padding: 16px;
-            border-top: 1px solid #ddd;
-        }
-
-        .input-container {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            font-family: Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
         }
-
-        select {
+        
+        .chat-container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .category-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .category-button {
+            padding: 10px 15px;
+            border: 2px solid #2196F3;
+            border-radius: 5px;
+            cursor: pointer;
+            background: white;
+            color: #2196F3;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .category-button:hover {
+            background: #E3F2FD;
+        }
+        
+        .category-button.active {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .category-description {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .chat-history {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            padding: 10px;
+            margin-bottom: 20px;
+            background: #f9f9f9;
+        }
+        
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .user-message {
+            background: #e3f2fd;
+            margin-left: 20%;
+            margin-right: 5px;
+        }
+        
+        .assistant-message {
+            background: #f5f5f5;
+            margin-right: 20%;
+            margin-left: 5px;
+        }
+        
+        .confidence-bar {
+            height: 4px;
+            background: #eee;
+            margin-top: 5px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .confidence-level {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s ease;
+        }
+        
+        .source-info {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            margin-top: 10px;
+        }
+        
+        .source-header {
+            font-weight: bold;
+            color: #2196F3;
+            margin-bottom: 5px;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+        
+        #userInput {
+            flex-grow: 1;
             padding: 10px;
             border: 1px solid #ddd;
-            border-radius: 8px;
-            background-color: white;
-            font-size: 0.9rem;
+            border-radius: 5px;
         }
-
-        textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            resize: none;
-            font-family: inherit;
-            font-size: 0.95rem;
-            background-color: white;
-            min-height: 50px;
-        }
-
+        
         button {
             padding: 10px 20px;
-            background-color: rgb(64,147,54);
+            background: #2196F3;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 5px;
             cursor: pointer;
-            font-weight: 500;
-            transition: background-color 0.2s;
         }
-
+        
         button:hover {
-            background-color: rgb(54,127,44);
+            background: #1976D2;
         }
-
-        .category-label {
-            font-size: 0.9rem;
+        
+        .loading {
+            display: none;
             color: #666;
+            font-style: italic;
+            margin: 10px 0;
+        }
+        
+        .confidence-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+        
+        .high-confidence {
+            background: #C8E6C9;
+            color: #2E7D32;
+        }
+        
+        .medium-confidence {
+            background: #FFE0B2;
+            color: #EF6C00;
+        }
+        
+        .low-confidence {
+            background: #FFCDD2;
+            color: #C62828;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Support Assistant</h1>
-    </div>
-
-    <div class="main-container">
-        <div class="chat-container">
-            <div id="chatHistory">
-                <div class="message-container"></div>
-            </div>
-            <div class="input-area">
-                <div class="input-container">
-                    <select id="supportCategory">
-                        <option value="phone">Phone System</option>
-                        <option value="fibre">Fibre Leased Line</option>
-                        <option value="email">Email</option>
-                        <option value="broadband">Broadband</option>
-                    </select>
-                    <textarea id="userInput" placeholder="Type your question here..." rows="2"></textarea>
-                    <button onclick="sendMessage()">Send Message</button>
-                </div>
-            </div>
+    <h1>IT Support Assistant</h1>
+    <div class="chat-container">
+        <div class="category-selector" id="categorySelector">
+            <button class="category-button" onclick="selectCategory('phone')">Phone System</button>
+            <button class="category-button" onclick="selectCategory('fibre')">Fibre Leased Line</button>
+            <button class="category-button" onclick="selectCategory('email')">Email</button>
+            <button class="category-button" onclick="selectCategory('broadband')">Broadband</button>
+        </div>
+        
+        <div class="category-description" id="categoryDescription">
+            Select a category above to get started
+        </div>
+        
+        <div class="chat-history" id="chatHistory"></div>
+        
+        <div class="loading" id="loading">Thinking...</div>
+        
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Ask your IT support question..." disabled>
+            <button onclick="sendMessage()" id="sendButton" disabled>Send</button>
         </div>
     </div>
 
     <script>
-        function sendMessage() {
-            const userInput = document.getElementById('userInput');
-            const category = document.getElementById('supportCategory').value;
-            const message = userInput.value.trim();
+        let currentCategory = null;
+        const chatHistory = document.getElementById('chatHistory');
+        const userInput = document.getElementById('userInput');
+        const loading = document.getElementById('loading');
+        const sendButton = document.getElementById('sendButton');
+        
+        function selectCategory(category) {
+            currentCategory = category;
             
-            if (!message) return;
-            
-            addToChatHistory('user', message);
-            userInput.value = '';
-            
-            fetch('/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ 
-                    message: message,
-                    category: category
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                addToChatHistory('assistant', data.response);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                addToChatHistory('assistant', 'Sorry, there was an error processing your request.');
+            // Update UI
+            document.querySelectorAll('.category-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase().includes(category)) {
+                    btn.classList.add('active');
+                }
             });
+            
+            const descriptions = {
+                phone: "Get help with phone system issues and configuration",
+                fibre: "Support for fibre leased line connectivity",
+                email: "Assistance with email services",
+                broadband: "Help with broadband connectivity issues"
+            };
+            
+            document.getElementById('categoryDescription').textContent = descriptions[category];
+            userInput.disabled = false;
+            sendButton.disabled = false;
+            
+            // Clear chat history
+            chatHistory.innerHTML = '';
+            
+            // Add welcome message for category
+            addMessage('assistant', `Hello! I'm here to help you with ${category}. What would you like to know?`);
         }
 
-        function addToChatHistory(role, message) {
-            const chatHistory = document.getElementById('chatHistory');
+        function addMessage(type, content) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = `${role}-message`;
-            messageDiv.textContent = message;
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.innerHTML = content;
             chatHistory.appendChild(messageDiv);
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
 
-        document.getElementById('userInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message || !currentCategory) return;
+
+            // Clear input
+            userInput.value = '';
+
+            // Add user message
+            addMessage('user', message);
+
+            // Show loading
+            loading.style.display = 'block';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        message: message,
+                        category: currentCategory
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.response) {
+                    addMessage('assistant', data.response);
+                } else {
+                    throw new Error('Invalid response format');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('assistant', 'Sorry, something went wrong. Please try again.');
+            }
+
+            // Hide loading
+            loading.style.display = 'none';
+        }
+
+        // Allow sending message with Enter key
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !userInput.disabled) {
                 sendMessage();
             }
         });
