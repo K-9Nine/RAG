@@ -307,5 +307,340 @@ def setup_database():
     except Exception as e:
         print(f"Error verifying setup: {e}")
 
+def setup_test_docs():
+    test_docs = [
+        # Previous documents remain...
+
+        # Adding Android App Documents
+        {
+            "content": "CallSwitch One Android App Overview: Mobile app transforms Android device into work phone extension. Manage calls, messages, files, history, and settings remotely. Available on Google Play Store.",
+            "category": "phone",
+            "metadata": '{"type": "mobile", "category": "overview", "platform": "android", "app": "callswitch"}'
+        },
+        {
+            "content": "CallSwitch Android Call Handling: Access keypad for direct dialing with green Call button. View Recent tab for call history (missed/received/made). Use Contacts for internal and device contact lists.",
+            "category": "phone",
+            "metadata": '{"type": "mobile", "category": "calls", "platform": "android", "app": "callswitch"}'
+        },
+        {
+            "content": "CallSwitch Android Call Transfer: Press Transfer button, select contact or enter number. Default is unattended transfer. Configure attended transfers in Settings > Calls. Use Swap to toggle active lines.",
+            "category": "phone",
+            "metadata": '{"type": "mobile", "category": "transfers", "platform": "android", "app": "callswitch"}'
+        },
+
+        # Adding Profile and Dashboard Documents
+        {
+            "content": "CallSwitch One Profile Picture Overview: Update profile pictures through Dashboard, Desktop App, or Mobile App. Customize user profiles with personal images.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "profile", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "CallSwitch Dashboard Profile Update: Access Voice > Users, click Edit icon. Upload image (max 800x800px) via Browse button or drag-drop. Adjust size/zoom with slider.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "profile", "product": "callswitch", "feature": "dashboard-update"}'
+        },
+        {
+            "content": "CallSwitch Desktop Profile Change: Open desktop app or callswitchone.app. Navigate to Settings > Account & General. Click Change Image, upload and adjust using zoom slider.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "profile", "product": "callswitch", "feature": "desktop-update"}'
+        },
+
+        # Adding Audio and Music Documents
+        {
+            "content": "CallSwitch One Audio Overview: Supports wide range of audio formats for hold music, voicemail greetings, and call menu prompts. Multiple format options for different use cases.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "audio", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "CallSwitch Common Audio Formats: Supports WAV, MP3, OGG, FLAC, AIFF, AU formats. Recommended for high-quality hold music and greetings. Best clarity and compatibility.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "audio", "product": "callswitch", "feature": "common-formats"}'
+        },
+        {
+            "content": "CallSwitch MOH Upload: Click Add Audio, browse for file, set Audio Nickname and Label. Select Music On Hold from Type dropdown. Save Changes to complete upload.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "audio", "product": "callswitch", "feature": "moh-upload"}'
+        },
+        {
+            "content": "CallSwitch Audio Recording: Select Record Audio tab, use shortcode *50. Press any key to stop, 1 to save, 2 to listen, 3 to re-record, 9 to exit. Files appear as Recorded by phone.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "audio", "product": "callswitch", "feature": "recording"}'
+        },
+
+        # Adding Call Park and Recording Documents
+        {
+            "content": "CallSwitch One Call Park Overview: Place callers on hold in parking spots for later retrieval by any team member. Enables flexible call transfers without direct transfer requirement.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "call-park", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "CallSwitch Call Park Slots: Five default parking slots available in Parked Area (right side of CallSwitch One Application). Monitor parked calls through visual interface.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "call-park", "product": "callswitch", "feature": "slots"}'
+        },
+        {
+            "content": "CallSwitch Park Short Codes: Use *11-*15 for Parking Spaces 1-5. Same code parks and retrieves calls (e.g., *11 for Space 1). Configure custom codes in Voice > Config > Short Code.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "call-park", "product": "callswitch", "feature": "short-codes"}'
+        },
+        {
+            "content": "CallSwitch One Call Recording Overview: Configure recording settings globally or for specific users/routes. Access through Calls tab > Call History. Choose between Custom, Enabled, or Disabled options.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "recording", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "CallSwitch Global Recording: Select Enabled option in Call History to record all calls system-wide. Choose Disabled to turn off all recording. Custom option for selective recording.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "recording", "product": "callswitch", "feature": "global"}'
+        },
+
+        # Adding Integration Documents
+        {
+            "content": "CallSwitch One Vincere Overview: Integrate Vincere CRM with CallSwitch One for seamless contact management. Connect contacts and candidates to phonebook system.",
+            "category": "phone",
+            "metadata": '{"type": "integration", "category": "crm", "product": "callswitch", "vendor": "vincere", "feature": "overview"}'
+        },
+        {
+            "content": "CallSwitch Vincere Prerequisites: Request API Key and Client ID from Vincere Support (support@vincere.io). Provide redirect URL format: https://www.[dashboardID].callswitchone.com/oauth/vincere",
+            "category": "phone",
+            "metadata": '{"type": "integration", "category": "crm", "product": "callswitch", "vendor": "vincere", "feature": "setup"}'
+        },
+        {
+            "content": "CallSwitch One BigQuery Overview: Integration complies with Google API Services User Data Policy and Limited Use requirements. Ensures privacy and security of accessed data.",
+            "category": "phone",
+            "metadata": '{"type": "integration", "category": "analytics", "product": "callswitch", "vendor": "bigquery", "feature": "overview"}'
+        },
+        {
+            "content": "CallSwitch BigQuery Security: Adheres to strict privacy guidelines and security protocols. Limited data access ensures protection of sensitive information.",
+            "category": "phone",
+            "metadata": '{"type": "integration", "category": "analytics", "product": "callswitch", "vendor": "bigquery", "feature": "security"}'
+        },
+
+        # Adding Dashboard Login Documents
+        {
+            "content": "CallSwitch One Dashboard Login Overview: Create individual login credentials for team members. Improve security and enable role-based access control through customizable permissions.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "access", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "CallSwitch Member Creation: Navigate to Account > Members. Click Invite Member, enter First/Last Name and Email. Assign role and customize access levels for specific Dashboard areas.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "access", "product": "callswitch", "feature": "member-creation"}'
+        },
+        {
+            "content": "CallSwitch Role Management: Access Account > Members > Member Roles. Edit existing roles or create new ones. Customize Dashboard area access by ticking relevant boxes.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "access", "product": "callswitch", "feature": "roles"}'
+        },
+
+        # Adding Unified Communications Documents
+        {
+            "content": "Unified Communications Overview: Advanced platform with VoIP telephony, call handling, video meetings, chat, presence, and document sharing. Managed through secure dashboard, available on mobile, desktop, and web.",
+            "category": "phone",
+            "metadata": '{"type": "uc", "category": "overview", "subcategory": "platform"}'
+        },
+        {
+            "content": "UC Applications: Available for desktop (Windows, Mac OS), mobile (iOS, Android), and web browsers. Features include VoIP telephony, advanced call routing, voicemail transcription, and call queues.",
+            "category": "phone",
+            "metadata": '{"type": "uc", "category": "features", "subcategory": "applications"}'
+        },
+        {
+            "content": "UC Call Management: Drag-and-drop call flow builder with IVR menus, on-hold music, time diaries, voicemail. Includes hunt groups, call-forwarding, and call parking.",
+            "category": "phone",
+            "metadata": '{"type": "uc", "category": "features", "subcategory": "call-management"}'
+        },
+        {
+            "content": "UC SMS Features: Business SMS supports individual and bulk messaging (up to 20,000 recipients). Includes campaign scheduling and cost tracking per recipient.",
+            "category": "phone",
+            "metadata": '{"type": "uc", "category": "features", "subcategory": "sms"}'
+        },
+
+        # Adding License Information
+        {
+            "content": "UC VoIP+ License: Includes 500 minutes to UK landlines/mobiles, basic VoIP features (call forwarding, on-hold music), SMS for up to 25 recipients.",
+            "category": "phone",
+            "metadata": '{"type": "uc", "category": "licensing", "subcategory": "voip-plus"}'
+        },
+        {
+            "content": "UC Advanced License: 2,000 minutes to UK landlines/mobiles, bulk SMS (20,000 recipients), multi-level IVR, video meetings, live wallboards.",
+            "category": "phone",
+            "metadata": '{"type": "uc", "category": "licensing", "subcategory": "advanced"}'
+        },
+        {
+            "content": "UCaaS License Benefits: 2000 minutes each to UK landlines/mobiles per user. Includes SSO support, CRM integration, bulk SMS (20,000 recipients), 90-day call recording, and voicemail transcription.",
+            "category": "phone",
+            "metadata": '{"type": "ucaas", "category": "licensing", "subcategory": "benefits"}'
+        },
+
+        # Adding Infrastructure and Security
+        {
+            "content": "UC Infrastructure: Hosted on Google Cloud for global availability and scalability. Features zero-trust security and regular updates through agile development.",
+            "category": "phone",
+            "metadata": '{"type": "uc", "category": "infrastructure", "subcategory": "cloud"}'
+        },
+        {
+            "content": "UC Microsoft Teams Integration: Make and receive calls within Teams while retaining CallSwitch features. Compatible with leading desk phone manufacturers.",
+            "category": "phone",
+            "metadata": '{"type": "uc", "category": "integrations", "subcategory": "teams"}'
+        },
+        {
+            "content": "UC CRM Integration: Supports Salesforce, HubSpot, Zoho with click-to-dial and screen pop-ups. Cloud storage backup with Azure, Amazon S3, Dropbox, Google Drive.",
+            "category": "phone",
+            "metadata": '{"type": "uc", "category": "integrations", "subcategory": "crm"}'
+        },
+
+        # Adding Reporting and Analytics
+        {
+            "content": "UC Reporting: Real-time wallboards and scheduled reports. Monitor KPIs including average wait times, answered calls, and abandonment rates.",
+            "category": "phone",
+            "metadata": '{"type": "uc", "category": "features", "subcategory": "reporting"}'
+        },
+        {
+            "content": "CallSwitch Analytics: Live wallboards show real-time metrics (call wait times, abandonment rates). Includes scheduled reporting for KPI tracking and call supervision tools (listen, whisper, barge).",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "analytics", "product": "callswitch", "feature": "overview"}'
+        },
+
+        # Adding Hot Desk Documents
+        {
+            "content": "Hot Desk Overview: Enable users to log into any configured desk phone. Access personal settings, contacts, and call history from any device. Ideal for flexible workspaces.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "hot-desk", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Hot Desk Setup: Configure in Voice > Users. Select Enable or Enable with PIN from Hot Desking dropdown. Set optional 4-digit PIN for added security.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "hot-desk", "product": "callswitch", "feature": "setup"}'
+        },
+        {
+            "content": "Hot Desk Login Process: Use *59 code on phone. Enter extension number and PIN if enabled. Successful login shows username on display. Logout with *60.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "hot-desk", "product": "callswitch", "feature": "login"}'
+        },
+
+        # Adding Queue Management
+        {
+            "content": "Queue Overview: Manage incoming calls with advanced routing options. Configure wait times, announcements, and overflow handling. Monitor real-time queue status.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "queue", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Queue Routing Options: Choose from Ring All, Sequential, Least Recent, or Round Robin. Set wrap-up time between calls. Configure overflow destinations for busy periods.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "queue", "product": "callswitch", "feature": "routing"}'
+        },
+        {
+            "content": "Queue Agent Status: Agents toggle availability with *61 (available) and *62 (unavailable). Status visible in dashboard and mobile app. Separate from Do Not Disturb.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "queue", "product": "callswitch", "feature": "agent-status"}'
+        },
+
+        # Adding Voicemail Features
+        {
+            "content": "Voicemail Setup: Access Voice > Users > Voicemail tab. Enable voicemail and configure PIN. Optional email notifications with message attachments.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "voicemail", "product": "callswitch", "feature": "setup"}'
+        },
+        {
+            "content": "Voicemail Access: Dial *97 from desk phone or mobile app. Enter PIN when prompted. Press 1 for new messages, 2 for saved messages, 3 for greetings.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "voicemail", "product": "callswitch", "feature": "access"}'
+        },
+        {
+            "content": "Voicemail Greetings: Record custom unavailable and busy greetings. Use *98 for direct greeting management. Upload pre-recorded greetings through dashboard.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "voicemail", "product": "callswitch", "feature": "greetings"}'
+        },
+
+        # Adding Call Flow Features
+        {
+            "content": "Call Flow Builder: Drag-and-drop interface for creating call routes. Add time conditions, IVR menus, queues, and voicemail. Test flows before publishing.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "call-flow", "product": "callswitch", "feature": "builder"}'
+        },
+        {
+            "content": "Time Conditions: Set business hours, holidays, and special events. Route calls differently based on time/date. Create unlimited time profiles.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "call-flow", "product": "callswitch", "feature": "time"}'
+        },
+        {
+            "content": "IVR Menus: Build multi-level menus with custom prompts. Configure digit actions and timeout handling. Set up emergency announcement overrides.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "call-flow", "product": "callswitch", "feature": "ivr"}'
+        },
+
+        # Adding Desktop App Features
+        {
+            "content": "Desktop App Overview: CallSwitch One desktop application for Windows and Mac. Access calls, messages, contacts, and settings. Available through download portal.",
+            "category": "phone",
+            "metadata": '{"type": "software", "category": "desktop", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Desktop Call Controls: Make/receive calls, transfer, hold, mute. Click-to-dial from contacts or history. Screen pop notifications for incoming calls.",
+            "category": "phone",
+            "metadata": '{"type": "software", "category": "desktop", "product": "callswitch", "feature": "calls"}'
+        },
+        {
+            "content": "Desktop Chat Features: Internal messaging with file sharing. Create group chats for team collaboration. Persistent chat history across devices.",
+            "category": "phone",
+            "metadata": '{"type": "software", "category": "desktop", "product": "callswitch", "feature": "chat"}'
+        },
+
+        # Adding Web Browser Features
+        {
+            "content": "Web App Access: Use CallSwitch One through web browser at callswitchone.app. Compatible with Chrome, Firefox, Safari, Edge. No installation required.",
+            "category": "phone",
+            "metadata": '{"type": "software", "category": "web", "product": "callswitch", "feature": "access"}'
+        },
+        {
+            "content": "Web App Features: Full functionality including calls, messages, contacts. Access call recordings and voicemail. Manage user settings and preferences.",
+            "category": "phone",
+            "metadata": '{"type": "software", "category": "web", "product": "callswitch", "feature": "features"}'
+        },
+        {
+            "content": "Web App Requirements: Modern browser with WebRTC support. Microphone and camera permissions for calls/video. Stable internet connection required.",
+            "category": "phone",
+            "metadata": '{"type": "software", "category": "web", "product": "callswitch", "feature": "requirements"}'
+        },
+
+        # Adding Contact Management
+        {
+            "content": "Contact Overview: Centralized contact management across devices. Internal directory with presence. External contacts with custom fields.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "contacts", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Contact Import: Bulk import contacts via CSV file. Map custom fields during import. Merge duplicate entries automatically.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "contacts", "product": "callswitch", "feature": "import"}'
+        },
+        {
+            "content": "Contact Groups: Create contact groups for easy management. Assign contacts to multiple groups. Use groups for bulk messaging.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "contacts", "product": "callswitch", "feature": "groups"}'
+        },
+
+        # Adding Short Code Features
+        {
+            "content": "Short Code Overview: Quick access to features through dial codes. Standard codes for voicemail, call park, queue login. Custom codes available.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "short-codes", "product": "callswitch", "feature": "overview"}'
+        },
+        {
+            "content": "Common Short Codes: *97 (voicemail), *98 (greetings), *11-*15 (call park), *59/*60 (hot desk), *61/*62 (queue login/logout).",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "short-codes", "product": "callswitch", "feature": "common"}'
+        },
+        {
+            "content": "Custom Short Codes: Create custom codes in Voice > Config > Short Codes. Assign to specific features or external numbers. Maximum 6 digits.",
+            "category": "phone",
+            "metadata": '{"type": "feature", "category": "short-codes", "product": "callswitch", "feature": "custom"}'
+        }
+    ]
+
+    processor = DocumentProcessor()
+    processor.batch_process_documents(test_docs)
+
 if __name__ == "__main__":
-    setup_database() 
+    setup_database()
+    setup_test_docs() 
