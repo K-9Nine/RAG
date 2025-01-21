@@ -212,3 +212,42 @@ async def get_count():
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.route('/delete', methods=['POST'])
+def delete_document():
+    try:
+        data = request.json
+        text = data.get('text')  # We can use text to find and delete the document
+        
+        if not text:
+            return jsonify({'success': False, 'message': 'No text provided'}), 400
+            
+        # Initialize Weaviate client
+        client = weaviate.Client(WEAVIATE_URL)
+        
+        # Find and delete the document
+        result = client.query.get('Document', ['text']).with_where({
+            'path': ['text'],
+            'operator': 'Equal',
+            'valueText': text
+        }).do()
+        
+        if result['data']['Get']['Document']:
+            # Get the ID of the document
+            doc_id = result['data']['Get']['Document'][0]['_additional']['id']
+            
+            # Delete the document
+            client.data_object.delete(doc_id, 'Document')
+            
+            return jsonify({
+                'success': True, 
+                'message': 'Document deleted successfully'
+            })
+        else:
+            return jsonify({
+                'success': False, 
+                'message': 'Document not found'
+            }), 404
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500

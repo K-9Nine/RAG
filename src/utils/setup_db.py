@@ -1457,6 +1457,45 @@ def setup_test_docs():
     processor = DocumentProcessor()
     processor.batch_process_documents(test_docs)
 
+def setup_schema(client):
+    """Set up the Weaviate schema with additional fields for soft deletion"""
+    schema = {
+        "classes": [{
+            "class": "Document",
+            "description": "A document in the knowledge base",
+            "properties": [
+                {
+                    "name": "text",
+                    "dataType": ["text"],
+                    "description": "The document text"
+                },
+                {
+                    "name": "category",
+                    "dataType": ["text"],
+                    "description": "The document category"
+                },
+                {
+                    "name": "metadata",
+                    "dataType": ["text"],
+                    "description": "The document metadata"
+                },
+                {
+                    "name": "isOutdated",
+                    "dataType": ["boolean"],
+                    "description": "Whether the document is marked as outdated"
+                },
+                {
+                    "name": "outdatedDate",
+                    "dataType": ["date"],
+                    "description": "When the document was marked as outdated"
+                }
+            ]
+        }]
+    }
+
+    client.schema.delete_all()
+    client.schema.create(schema)
+
 if __name__ == "__main__":
     setup_database()
     setup_test_docs() 
