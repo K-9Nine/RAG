@@ -817,23 +817,22 @@ async def reprocess_documents(request: Request):
         
         print("Starting document reprocessing...")
         
-        # First, get all existing documents
+        # First, get all existing documents with only available fields
         result = (
             client.query
             .get("SupportDocs", [
                 "content", 
                 "metadata", 
-                "category", 
-                "originalMetadata"
+                "category"
             ])
             .with_additional(["id"])
             .do()
         )
         
-        print("Query result:", result)  # Debug print
+        print("Query result:", result)
         
         if not result or "data" not in result or "Get" not in result["data"] or "SupportDocs" not in result["data"]["Get"]:
-            return {"status": "No documents found"}
+            return JSONResponse(content={"status": "No documents found"})
             
         docs = result["data"]["Get"]["SupportDocs"]
         print(f"Found {len(docs)} documents to process")
@@ -902,11 +901,16 @@ async def reprocess_documents(request: Request):
             try:
                 print(f"Processing document {processed_count + 1}/{len(docs)}")
                 
-                # Format document
-                formatted_doc = extract_and_format_document(doc)
+                # Format document with only available fields
+                formatted_doc = {
+                    "content": doc.get("content", ""),
+                    "metadata": doc.get("metadata", ""),
+                    "category": doc.get("category", "unknown"),
+                    "originalMetadata": doc.get("metadata", "")  # Use metadata as originalMetadata
+                }
                 
                 # Validate
-                if not validate_document(formatted_doc):
+                if not all(formatted_doc.get(field) for field in ["content", "metadata", "category"]):
                     print(f"Skipping invalid document: {doc.get('_additional', {}).get('id')}")
                     error_count += 1
                     continue
@@ -941,16 +945,19 @@ async def reprocess_documents(request: Request):
                 error_count += 1
                 continue
         
-        return {
+        return JSONResponse(content={
             "status": "success",
             "processed": processed_count,
             "errors": error_count,
             "backup_file": backup_file
-        }
+        })
             
     except Exception as e:
         print(f"Error in reprocess_documents: {str(e)}")
-        return {"error": str(e)}
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
 
 @app.post("/validate")
 async def validate_upload(request: Request):
