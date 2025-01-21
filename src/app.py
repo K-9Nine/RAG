@@ -369,6 +369,7 @@ async def get_documents():
         
         print("Fetching documents from Weaviate...")
         
+        # First, let's see what we're getting from the database
         result = (
             client.query
             .get("SupportDocs", ["content", "metadata", "category", "originalMetadata", "chunkIndex", "totalChunks"])
@@ -376,53 +377,69 @@ async def get_documents():
             .do()
         )
         
-        print("Query result:", result)  # Debug print
-        
         if not result or "data" not in result or "Get" not in result["data"] or "SupportDocs" not in result["data"]["Get"]:
             print("No documents found")
             return {"documents": []}
-            
+        
+        docs = result["data"]["Get"]["SupportDocs"]
+        print(f"Found {len(docs)} document chunks")
+        
         # Group chunks by original metadata and category
         documents = {}
-        for doc in result["data"]["Get"]["SupportDocs"]:
+        for doc in docs:
             try:
-                key = f"{doc.get('originalMetadata', '')}_{doc.get('category', '')}"
-                chunk_index = int(doc.get('chunkIndex', 0))  # Ensure integer
-                total_chunks = int(doc.get('totalChunks', 1))  # Ensure integer
+                # Extract values with defaults
+                metadata = doc.get('originalMetadata', doc.get('metadata', ''))
+                category = doc.get('category', '')
+                content = doc.get('content', '')
+                doc_id = doc.get('_additional', {}).get('id', '')
                 
+                # Create a key for grouping
+                key = f"{metadata}_{category}"
+                
+                # Initialize document entry if it doesn't exist
                 if key not in documents:
                     documents[key] = {
-                        "content": [],  # Start with empty list
-                        "metadata": doc.get('originalMetadata', ''),
-                        "category": doc.get('category', ''),
-                        "id": doc.get('_additional', {}).get('id', ''),
-                        "chunks": total_chunks
+                        "content": [],
+                        "metadata": metadata,
+                        "category": category,
+                        "id": doc_id
                     }
-                    # Initialize content list with empty strings
-                    documents[key]["content"] = [""] * total_chunks
                 
-                # Place chunk in correct position
-                if 0 <= chunk_index < len(documents[key]["content"]):
-                    documents[key]["content"][chunk_index] = doc.get('content', '')
+                # Append content (we'll sort later if chunk info exists)
+                documents[key]["content"].append(content)
+                
+                # Try to get chunk information
+                try:
+                    chunk_index = int(doc.get('chunkIndex', -1))
+                    total_chunks = int(doc.get('totalChunks', 1))
+                    if chunk_index >= 0:
+                        # Ensure content list is long enough
+                        while len(documents[key]["content"]) < total_chunks:
+                            documents[key]["content"].append("")
+                        # Place content in correct position
+                        documents[key]["content"][chunk_index] = content
+                except (TypeError, ValueError) as e:
+                    print(f"No valid chunk information for document: {e}")
+                    # Keep the content appended at the end
                 
             except Exception as e:
-                print(f"Error processing document chunk: {str(e)}")
+                print(f"Error processing document: {str(e)}")
                 continue
         
-        # Combine chunks and format for display
+        # Format documents for display
         formatted_docs = []
         for doc in documents.values():
             try:
-                # Filter out empty strings and join chunks
-                content = " ".join([chunk for chunk in doc["content"] if chunk])
-                
-                if content:  # Only add document if it has content
+                # Filter out empty strings and join content
+                content = " ".join(filter(None, doc["content"]))
+                if content:
                     formatted_docs.append({
                         "id": doc["id"],
                         "content": content,
                         "metadata": doc["metadata"],
                         "category": doc["category"],
-                        "chunks": doc["chunks"]
+                        "chunks": len(doc["content"])
                     })
             except Exception as e:
                 print(f"Error formatting document: {str(e)}")
