@@ -8,3 +8,5 @@ pydantic-settings==2.1.0
 httpx==0.25.2
 python-multipart
 jinja2
+langchain==0.0.350
+langchain-text-splitters==0.0.1
