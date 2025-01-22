@@ -499,6 +499,44 @@ async def delete_document(doc_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+def generate_answer(query: str, docs: List[Dict]) -> str:
+    """Generate a response based on the retrieved documents"""
+    if not docs:
+        return "I don't have enough information to answer that question."
+    
+    # Get the most relevant document
+    most_relevant = docs[0]["content"]
+    
+    # For multiple documents, combine relevant information
+    if len(docs) > 1:
+        supporting_info = [doc["content"] for doc in docs[1:]]
+        # Could enhance this with better text combination logic
+    
+    return most_relevant
+
+def calculate_confidence(
+    vector_score: float,
+    num_docs: int,
+    context_completeness: float
+) -> float:
+    """Calculate confidence score (0-1) based on multiple factors"""
+    # Normalize vector score (usually 0-1 already)
+    vec_weight = 0.5
+    doc_weight = 0.3
+    context_weight = 0.2
+    
+    # Document count score (peaks at 3-5 docs)
+    doc_score = min(num_docs / 3, 1.0)
+    
+    # Combine scores with weights
+    confidence = (
+        vector_score * vec_weight +
+        doc_score * doc_weight +
+        context_completeness * context_weight
+    )
+    
+    return round(confidence, 2)
+
 @app.post("/chat")
 async def chat(request: Request):
     try:
@@ -535,7 +573,7 @@ async def chat(request: Request):
             context_completeness=context_completeness
         )
 
-        # Generate response using your existing logic
+        # Generate response using the documents
         response = generate_answer(message, docs)
 
         return {
@@ -1069,29 +1107,6 @@ async def cleanup_existing_data():
         print(f"Error in cleanup_existing_data: {str(e)}")
         return {"error": str(e)}
 
-def calculate_confidence(
-    vector_score: float,
-    num_docs: int,
-    context_completeness: float
-) -> float:
-    """Calculate confidence score (0-1) based on multiple factors"""
-    # Normalize vector score (usually 0-1 already)
-    vec_weight = 0.5
-    doc_weight = 0.3
-    context_weight = 0.2
-    
-    # Document count score (peaks at 3-5 docs)
-    doc_score = min(num_docs / 3, 1.0)
-    
-    # Combine scores with weights
-    confidence = (
-        vector_score * vec_weight +
-        doc_score * doc_weight +
-        context_completeness * context_weight
-    )
-    
-    return round(confidence, 2)
-
 @app.post("/query")
 async def query_documents(query: str):
     try:
@@ -1118,7 +1133,7 @@ async def query_documents(query: str):
         context_words = sum(len(d["content"].split()) for d in docs)
         context_completeness = min(context_words / 100, 1.0)  # Normalize to 0-1
         
-        # Generate answer using your existing logic
+        # Generate answer using the documents
         answer = generate_answer(query, docs)
         
         # Calculate confidence
