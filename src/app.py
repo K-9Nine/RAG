@@ -496,60 +496,52 @@ async def delete_document(doc_id: str):
 
 @app.post("/chat")
 async def chat(request: Request):
-    """Handle chat messages"""
     try:
         data = await request.json()
-        message = data.get("message")
-        category = data.get("category")
-        
-        if not message or not category:
-            raise HTTPException(status_code=400, detail="Message and category are required")
+        message = data.get("message", "")
+        category = data.get("category", "")
 
-        # Get relevant context
-        context_data = await get_relevant_context(message, category)
+        # Get vector search results
+        results = client.query.get(
+            "SupportDocs",
+            ["content", "metadata", "category"]
+        ).with_near_text({
+            "concepts": [message]
+        }).with_additional(["distance"]).do()
+
+        docs = results["data"]["Get"]["SupportDocs"]
         
-        if not context_data["context_text"]:
+        if not docs:
             return {
-                "response": "I couldn't find any relevant information. Could you please rephrase your question?",
+                "response": "I don't have enough information to answer that question.",
+                "confidence": 0.0,
                 "results": []
             }
-            
-        # Generate response using OpenAI
-        system_prompt = """You are a helpful support assistant. Use the provided context to answer the user's question.
-        If you cannot find a relevant answer in the context, say so.
-        Keep your answers clear and concise."""
-        
-        user_prompt = f"""Question: {message}
 
-        Available context:{context_data['context_text']}
+        # Calculate confidence score
+        distances = [d["_additional"]["distance"] for d in docs]
+        vector_score = 1 - min(distances) if distances else 0
+        context_words = sum(len(d["content"].split()) for d in docs)
+        context_completeness = min(context_words / 100, 1.0)
+        
+        confidence = calculate_confidence(
+            vector_score=vector_score,
+            num_docs=len(docs),
+            context_completeness=context_completeness
+        )
 
-        Please provide a clear, step-by-step answer based on this information."""
-        
-        try:
-            response = openai_client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.7,
-                max_tokens=500
-            )
-            
-            ai_response = response.choices[0].message.content
-            
-        except Exception as e:
-            print(f"OpenAI API error: {str(e)}")
-            ai_response = "I found relevant information but had trouble generating a response. Please try again."
-        
+        # Generate response using your existing logic
+        response = generate_answer(message, docs)
+
         return {
-            "response": ai_response,
-            "results": context_data["contexts"]
+            "response": response,
+            "confidence": confidence,
+            "results": docs[:5]  # Keep top 5 results for reference
         }
-            
+
     except Exception as e:
-        print(f"Chat error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error in chat endpoint: {str(e)}")
+        return {"error": str(e)}
 
 @app.get("/diagnose")
 async def diagnose_documents():
