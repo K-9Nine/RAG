@@ -366,12 +366,28 @@ async def get_count():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/documents")
-async def get_documents():
+async def get_documents(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100)
+):
     """Get list of documents with pagination"""
     try:
-        logger.info("Starting document fetch...")
+        logger.info(f"Fetching documents - page: {page}, page_size: {page_size}")
         
-        # Query only existing fields
+        # Calculate offset
+        offset = (page - 1) * page_size
+        
+        # Get total count first
+        count_result = (
+            client.query
+            .aggregate("SupportDocs")
+            .with_meta_count()
+            .do()
+        )
+        
+        total_documents = count_result.get("data", {}).get("Aggregate", {}).get("SupportDocs", [{}])[0].get("meta", {}).get("count", 0)
+        
+        # Query documents with pagination
         result = (
             client.query
             .get("SupportDocs", [
@@ -380,30 +396,23 @@ async def get_documents():
                 "category"
             ])
             .with_additional(["id"])
-            .with_limit(50)
+            .with_limit(page_size)
+            .with_offset(offset)
             .do()
         )
         
-        logger.info(f"Raw Weaviate response: {json.dumps(result, indent=2)}")
-        
-        if not result:
-            logger.error("Query returned None")
-            return {"documents": [], "error": "Query returned None"}
-            
-        if "data" not in result:
-            logger.error("No 'data' in response")
-            return {"documents": [], "error": "No data in response"}
-            
-        if "Get" not in result["data"]:
-            logger.error("No 'Get' in data")
-            return {"documents": [], "error": "No Get in data"}
-            
-        if "SupportDocs" not in result["data"]["Get"]:
-            logger.error("No 'SupportDocs' in Get")
-            return {"documents": [], "error": "No SupportDocs in Get"}
+        if not result or "data" not in result or "Get" not in result["data"] or "SupportDocs" not in result["data"]["Get"]:
+            return {
+                "documents": [],
+                "pagination": {
+                    "total": 0,
+                    "page": page,
+                    "page_size": page_size,
+                    "total_pages": 0
+                }
+            }
             
         documents = result["data"]["Get"]["SupportDocs"]
-        logger.info(f"Found {len(documents)} documents")
         
         # Format documents for display
         formatted_docs = []
@@ -415,19 +424,17 @@ async def get_documents():
                 "category": doc.get("category", "unknown")
             }
             formatted_docs.append(formatted_doc)
-            
-        logger.info(f"Returning {len(formatted_docs)} formatted documents")
+        
+        # Calculate pagination info
+        total_pages = (total_documents + page_size - 1) // page_size
         
         return {
             "documents": formatted_docs,
-            "debug_info": {
-                "raw_count": len(documents),
-                "formatted_count": len(formatted_docs),
-                "response_structure": {
-                    "has_data": "data" in result,
-                    "has_get": "Get" in result.get("data", {}),
-                    "has_docs": "SupportDocs" in result.get("data", {}).get("Get", {})
-                }
+            "pagination": {
+                "total": total_documents,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": total_pages
             }
         }
             
