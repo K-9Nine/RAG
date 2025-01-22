@@ -507,31 +507,38 @@ async def delete_document(doc_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-def generate_answer(query: str, docs: List[Dict]) -> str:
-    """Generate a more detailed response based on the retrieved documents"""
+def generate_answer(query: str, docs: List[Dict]) -> Tuple[str, List[Dict]]:
+    """Generate response and return used sources"""
     if not docs:
-        return "I don't have enough information to answer that question."
+        return "I don't have enough information to answer that question.", []
     
     # Sort documents by relevance (distance)
     sorted_docs = sorted(docs, key=lambda x: x["_additional"]["distance"])
     
     # Get the most relevant document
-    primary_doc = sorted_docs[0]["content"]
+    primary_doc = sorted_docs[0]
+    response = primary_doc["content"]
+    
+    # Track used sources
+    used_sources = [{
+        "content": primary_doc["content"],
+        "distance": primary_doc["_additional"]["distance"],
+        "metadata": primary_doc.get("metadata", "")
+    }]
     
     # Get supporting details from other relevant documents
-    supporting_docs = [doc["content"] for doc in sorted_docs[1:3]]
-    
-    # Combine information
-    response = primary_doc
-    
-    # Add supporting details if they provide new information
-    for doc in supporting_docs:
-        if doc not in response:  # Avoid duplicate information
-            additional_info = doc.split(". ")[0]  # Take first sentence
-            if len(response + ". " + additional_info) <= 500:  # Keep response concise
+    for doc in sorted_docs[1:3]:
+        if doc["content"] not in response:  # Avoid duplicate information
+            additional_info = doc["content"].split(". ")[0]  # Take first sentence
+            if len(response + ". " + additional_info) <= 500:
                 response += ". " + additional_info
+                used_sources.append({
+                    "content": doc["content"],
+                    "distance": doc["_additional"]["distance"],
+                    "metadata": doc.get("metadata", "")
+                })
     
-    return response
+    return response, used_sources
 
 def calculate_confidence(
     vector_score: float,
@@ -583,6 +590,7 @@ async def chat(request: Request):
             return {
                 "response": "I don't have enough information to answer that question.",
                 "confidence": 0.0,
+                "sources": [],
                 "results": []
             }
 
@@ -601,12 +609,14 @@ async def chat(request: Request):
         logger.info(f"Calculated confidence: {confidence}")
 
         # Generate response using the documents
-        response = generate_answer(message, docs)
+        response, used_sources = generate_answer(message, docs)
         logger.info(f"Generated response: {response}")
+        logger.info(f"Used sources: {used_sources}")
 
         return {
             "response": response,
             "confidence": confidence,
+            "sources": used_sources,
             "results": docs[:5]
         }
 
