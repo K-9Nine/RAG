@@ -300,6 +300,27 @@
             }
         }
 
+        // Add the updateStats function
+        async function updateStats() {
+            try {
+                // Get total document count
+                const countResponse = await fetch('/count');
+                const countData = await countResponse.json();
+                if (countData.count !== undefined) {
+                    document.getElementById('documentCount').textContent = countData.count;
+                }
+                
+                // Get categories
+                const categoriesResponse = await fetch('/categories');
+                const categoriesData = await categoriesResponse.json();
+                if (categoriesData.categories) {
+                    document.getElementById('categoryCount').textContent = categoriesData.categories.length;
+                }
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+
         // Wait for DOM to be fully loaded
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Setting up pagination controls'); // Debug log
@@ -389,6 +410,7 @@
 
             // Initial load
             loadDocuments();
+            updateStats();  // Add this line
         });
 
         // Add global error handler
