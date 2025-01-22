@@ -214,98 +214,33 @@
     </div>
 
     <script>
-        let currentCategory = null;
-        const chatHistory = document.getElementById('chatHistory');
+        // Global variables
+        let currentCategory = 'all';
+        const chatForm = document.getElementById('chatForm');
         const userInput = document.getElementById('userInput');
-        const loading = document.getElementById('loading');
         const sendButton = document.getElementById('sendButton');
-        
+
+        // Category selection
         function selectCategory(category) {
             currentCategory = category;
-            
-            // Update UI
-            document.querySelectorAll('.category-button').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.textContent.toLowerCase().includes(category)) {
-                    btn.classList.add('active');
-                }
+            // Update UI to show active category
+            document.querySelectorAll('.filter-button').forEach(button => {
+                button.classList.remove('active');
             });
-            
-            const descriptions = {
-                phone: "Get help with phone system issues and configuration",
-                fibre: "Support for fibre leased line connectivity",
-                email: "Assistance with email services",
-                broadband: "Help with broadband connectivity issues"
-            };
-            
-            document.getElementById('categoryDescription').textContent = descriptions[category];
-            userInput.disabled = false;
-            sendButton.disabled = false;
-            
-            // Clear chat history
-            chatHistory.innerHTML = '';
-            
-            // Add welcome message for category
-            addMessage('assistant', `Hello! I'm here to help you with ${category}. What would you like to know?`);
-        }
-
-        function addMessage(type, content, confidence = null, sources = null) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}-message`;
-            
-            let messageContent = content;
-            
-            // Add confidence badge for assistant messages
-            if (type === 'assistant') {
-                if (confidence) {
-                    let confidenceClass = 'low-confidence';
-                    if (confidence >= 0.8) confidenceClass = 'high-confidence';
-                    else if (confidence >= 0.5) confidenceClass = 'medium-confidence';
-                    
-                    const confidencePercent = Math.round(confidence * 100);
-                    messageContent += `
-                        <div class="confidence-tag ${confidenceClass}">
-                            ${confidencePercent}% Confidence
-                        </div>`;
-                }
-                
-                // Add sources if available
-                if (sources && sources.length > 0) {
-                    messageContent += `
-                        <div class="sources-container">
-                            <details>
-                                <summary>Sources (${sources.length})</summary>
-                                <div class="sources-list">
-                                    ${sources.map((source, index) => `
-                                        <div class="source-item">
-                                            <div class="source-content">${source.content}</div>
-                                            <div class="source-metadata">
-                                                <small>Relevance: ${Math.round((1 - source.distance) * 100)}%</small>
-                                                <small>Metadata: ${source.metadata}</small>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </details>
-                        </div>`;
-                }
-            }
-            
-            messageDiv.innerHTML = messageContent;
-            chatHistory.appendChild(messageDiv);
-            chatHistory.scrollTop = chatHistory.scrollHeight;
+            document.querySelector(`[data-category="${category}"]`)?.classList.add('active');
+            // Reload documents with new category
+            loadDocuments();
         }
 
         async function sendMessage(message, category) {
             try {
-                // Validate input
                 if (!message || message.trim() === '') {
                     throw new Error('Please enter a message');
                 }
                 
                 console.log('Sending request:', { 
                     query: message, 
-                    category: category || null 
+                    category: category || currentCategory 
                 });
                 
                 const response = await fetch('/query', {
@@ -315,7 +250,7 @@
                     },
                     body: JSON.stringify({
                         query: message,
-                        category: category || null
+                        category: category || currentCategory
                     })
                 });
                 
@@ -352,10 +287,7 @@
                 return;
             }
             
-            const urlParams = new URLSearchParams(window.location.search);
-            const category = urlParams.get('category');
-            
-            sendMessage(text, category)
+            sendMessage(text, currentCategory)
                 .then(response => {
                     addMessageToChat('assistant', response.answer, response);
                 })
@@ -369,21 +301,14 @@
         function addChatClickHandler() {
             const chatMessages = document.querySelectorAll('.chat-message.user');
             chatMessages.forEach(message => {
-                // Remove any existing click handlers
                 message.removeEventListener('click', handleMessageClick);
-                // Add new click handler
                 message.addEventListener('click', handleMessageClick);
             });
         }
 
-        // Form submission
-        const chatForm = document.getElementById('chatForm');
-        const userInput = document.getElementById('userInput');
-        const sendButton = document.getElementById('sendButton');
-
         async function handleSubmit(e) {
             e.preventDefault();
-            console.log('Form submitted'); // Debug log
+            console.log('Form submitted');
             
             const message = userInput.value.trim();
             if (!message) {
@@ -391,23 +316,12 @@
                 return;
             }
             
-            const urlParams = new URLSearchParams(window.location.search);
-            const category = urlParams.get('category');
-            
             try {
-                // Add user message first
                 addMessageToChat('user', message);
-                
-                // Clear input
                 userInput.value = '';
                 
-                // Get AI response
-                const response = await sendMessage(message, category);
-                
-                // Add AI response
+                const response = await sendMessage(message, currentCategory);
                 addMessageToChat('assistant', response.answer, response);
-                
-                // Update click handlers
                 addChatClickHandler();
                 
             } catch (error) {
@@ -416,40 +330,39 @@
             }
         }
 
-        // Add form submit event listener
-        chatForm.addEventListener('submit', handleSubmit);
-
-        // Add click event for send button
-        sendButton.addEventListener('click', handleSubmit);
-
-        // Add enter key handler for input field
-        userInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
+        // Setup event listeners
+        function setupEventListeners() {
+            // Form submission
+            chatForm?.addEventListener('submit', handleSubmit);
+            
+            // Send button click
+            sendButton?.addEventListener('click', (e) => {
                 e.preventDefault();
                 handleSubmit(e);
-            }
-        });
-
-        // Initial setup
-        document.addEventListener('DOMContentLoaded', () => {
-            addChatClickHandler();
-            
-            // Focus input field
-            if (userInput) {
-                userInput.focus();
-            }
-            
-            // Debug log
-            console.log('Chat interface initialized');
-        });
-
-        // Remove any inline onclick handlers
-        document.addEventListener('DOMContentLoaded', () => {
-            const elements = document.querySelectorAll('[onclick]');
-            elements.forEach(element => {
-                element.removeAttribute('onclick');
             });
-            console.log('Removed inline onclick handlers');
+            
+            // Enter key press
+            userInput?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit(e);
+                }
+            });
+            
+            // Category buttons
+            document.querySelectorAll('.filter-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    selectCategory(button.dataset.category);
+                });
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+            addChatClickHandler();
+            userInput?.focus();
+            console.log('Chat interface initialized');
         });
     </script>
 </body>
