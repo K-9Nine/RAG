@@ -1202,3 +1202,8 @@ def get_confidence_label(score: float) -> str:
         return "Medium Confidence"
     else:
         return "Low Confidence"
+
+@app.get("/document-management")
+async def document_management_page():
+    """Render the document management page"""
+    return FileResponse("src/static/document-management.html")
