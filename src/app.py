@@ -29,9 +29,9 @@ openai_client = OpenAI(
 
 # Initialize Weaviate client
 client = weaviate.Client(
-    url="http://localhost:8080",  # Updated to use localhost
+    url="http://weaviate:8080",  # Use Docker service name
     additional_headers={
-        "X-OpenAI-Api-Key": os.getenv("OPENAI_API_KEY")  # Make sure this is set
+        "X-OpenAI-Api-Key": os.getenv("OPENAI_API_KEY")
     }
 )
 
