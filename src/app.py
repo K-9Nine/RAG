@@ -546,7 +546,14 @@ class QueryRequest(BaseModel):
 
 @app.post("/query")
 async def query_documents(request: QueryRequest):
+    """Query documents with optional category filter"""
     try:
+        # Log incoming request
+        logger.info(f"Received query request: {request.dict()}")
+        
+        if not request.query:
+            raise HTTPException(status_code=400, detail="Query cannot be empty")
+            
         # Build vector search query
         vector_query = (
             client.query.get(
@@ -561,6 +568,7 @@ async def query_documents(request: QueryRequest):
         
         # Add category filter if specified
         if request.category and request.category != 'all':
+            logger.info(f"Filtering by category: {request.category}")
             vector_query = vector_query.with_where({
                 "path": ["category"],
                 "operator": "Equal",
@@ -607,7 +615,7 @@ async def query_documents(request: QueryRequest):
         
     except Exception as e:
         logger.error(f"Error in query_documents: {str(e)}")
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 def get_confidence_label(score: float) -> str:
     """Convert confidence score to human-readable label"""

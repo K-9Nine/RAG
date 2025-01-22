@@ -298,6 +298,8 @@
 
         async function sendMessage(message, category) {
             try {
+                console.log('Sending request:', { query: message, category: category }); // Debug log
+                
                 const response = await fetch('/query', {
                     method: 'POST',
                     headers: {
@@ -310,17 +312,21 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorData = await response.json();
+                    console.error('Server error:', errorData); // Debug log
+                    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
                 }
                 
                 const data = await response.json();
+                console.log('Response:', data); // Debug log
+                
                 if (data.error) {
                     throw new Error(data.error);
                 }
                 
                 return data;
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error in sendMessage:', error);
                 throw error;
             }
         }
@@ -338,7 +344,13 @@
         // Update the chat form submission
         document.getElementById('chatForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const userInput = document.getElementById('userInput').value;
+            const userInput = document.getElementById('userInput').value.trim();
+            
+            if (!userInput) {
+                console.error('Empty input');
+                return;
+            }
+            
             const urlParams = new URLSearchParams(window.location.search);
             const category = urlParams.get('category');
             
@@ -357,7 +369,7 @@
                 
             } catch (error) {
                 console.error('Error:', error);
-                addMessageToChat('error', 'Sorry, there was an error processing your request.');
+                addMessageToChat('error', `Error: ${error.message}`);
             }
         });
     </script>
