@@ -299,8 +299,8 @@
         async function sendMessage(message, category) {
             try {
                 // Validate input
-                if (!message) {
-                    throw new Error('Message cannot be empty');
+                if (!message || message.trim() === '') {
+                    throw new Error('Please enter a message');
                 }
                 
                 console.log('Sending request:', { 
@@ -335,42 +335,46 @@
             }
         }
 
-        // Allow sending message with Enter key
-        userInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !userInput.disabled) {
-                sendMessage();
+        // Handle message clicks
+        function handleMessageClick(messageText, category) {
+            if (!messageText || messageText.trim() === '') {
+                console.error('Invalid message text');
+                return;
             }
-        });
-
-        // Add currentCategory to window scope
-        window.currentCategory = null;
+            
+            sendMessage(messageText, category)
+                .then(response => {
+                    addMessageToChat('assistant', response.answer, response);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    addMessageToChat('error', error.message);
+                });
+        }
 
         // Update click handler for chat messages
         function addChatClickHandler() {
             const chatMessages = document.querySelectorAll('.chat-message.user');
             chatMessages.forEach(message => {
-                const text = message.querySelector('.message-content').textContent;
-                message.addEventListener('click', async () => {
-                    try {
+                const messageContent = message.querySelector('.message-content');
+                if (messageContent) {
+                    const text = messageContent.textContent.trim();
+                    message.onclick = () => {
                         const urlParams = new URLSearchParams(window.location.search);
                         const category = urlParams.get('category');
-                        const response = await sendMessage(text, category);
-                        addMessageToChat('assistant', response.answer, response);
-                    } catch (error) {
-                        console.error('Error:', error);
-                        addMessageToChat('error', error.message);
-                    }
-                });
+                        handleMessageClick(text, category);
+                    };
+                }
             });
         }
 
-        // Update form submission
+        // Form submission
         document.getElementById('chatForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const userInput = document.getElementById('userInput').value.trim();
             if (!userInput) {
-                console.error('Empty input');
+                addMessageToChat('error', 'Please enter a message');
                 return;
             }
             
@@ -378,13 +382,19 @@
             const category = urlParams.get('category');
             
             try {
+                // Add user message first
                 addMessageToChat('user', userInput);
+                
+                // Clear input
                 document.getElementById('userInput').value = '';
                 
+                // Get AI response
                 const response = await sendMessage(userInput, category);
+                
+                // Add AI response
                 addMessageToChat('assistant', response.answer, response);
                 
-                // Update click handlers for new messages
+                // Update click handlers
                 addChatClickHandler();
                 
             } catch (error) {
@@ -393,8 +403,16 @@
             }
         });
 
-        // Initial setup of click handlers
-        document.addEventListener('DOMContentLoaded', addChatClickHandler);
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            addChatClickHandler();
+            
+            // Focus input field
+            const inputField = document.getElementById('userInput');
+            if (inputField) {
+                inputField.focus();
+            }
+        });
     </script>
 </body>
 </html> 
