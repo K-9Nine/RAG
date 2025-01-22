@@ -542,7 +542,7 @@ def calculate_confidence(
 
 class QueryRequest(BaseModel):
     query: str
-    category: str | None = None
+    category: Optional[str] = None
 
 @app.post("/query")
 async def query_documents(request: QueryRequest):
