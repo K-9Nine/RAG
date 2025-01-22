@@ -161,6 +161,32 @@
             background: #FFCDD2;
             color: #C62828;
         }
+        
+        .sources-container {
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        
+        .sources-list {
+            margin-top: 8px;
+            padding-left: 15px;
+        }
+        
+        .source-item {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        
+        .source-metadata {
+            margin-top: 4px;
+            color: #666;
+        }
+        
+        .source-metadata small {
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -223,24 +249,46 @@
             addMessage('assistant', `Hello! I'm here to help you with ${category}. What would you like to know?`);
         }
 
-        function addMessage(type, content, confidence = null) {
+        function addMessage(type, content, confidence = null, sources = null) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${type}-message`;
             
-            // Create message content
             let messageContent = content;
             
-            // Add confidence badge for assistant messages if confidence exists
-            if (type === 'assistant' && confidence) {
-                let confidenceClass = 'low-confidence';
-                if (confidence >= 0.8) confidenceClass = 'high-confidence';
-                else if (confidence >= 0.5) confidenceClass = 'medium-confidence';
+            // Add confidence badge for assistant messages
+            if (type === 'assistant') {
+                if (confidence) {
+                    let confidenceClass = 'low-confidence';
+                    if (confidence >= 0.8) confidenceClass = 'high-confidence';
+                    else if (confidence >= 0.5) confidenceClass = 'medium-confidence';
+                    
+                    const confidencePercent = Math.round(confidence * 100);
+                    messageContent += `
+                        <div class="confidence-tag ${confidenceClass}">
+                            ${confidencePercent}% Confidence
+                        </div>`;
+                }
                 
-                const confidencePercent = Math.round(confidence * 100);
-                messageContent += `
-                    <div class="confidence-tag ${confidenceClass}">
-                        ${confidencePercent}% Confidence
-                    </div>`;
+                // Add sources if available
+                if (sources && sources.length > 0) {
+                    messageContent += `
+                        <div class="sources-container">
+                            <details>
+                                <summary>Sources (${sources.length})</summary>
+                                <div class="sources-list">
+                                    ${sources.map((source, index) => `
+                                        <div class="source-item">
+                                            <div class="source-content">${source.content}</div>
+                                            <div class="source-metadata">
+                                                <small>Relevance: ${Math.round((1 - source.distance) * 100)}%</small>
+                                                <small>Metadata: ${source.metadata}</small>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </details>
+                        </div>`;
+                }
             }
             
             messageDiv.innerHTML = messageContent;
@@ -252,13 +300,8 @@
             const message = userInput.value.trim();
             if (!message || !currentCategory) return;
 
-            // Clear input
             userInput.value = '';
-
-            // Add user message
             addMessage('user', message);
-
-            // Show loading
             loading.style.display = 'block';
 
             try {
@@ -274,14 +317,10 @@
                 });
 
                 const data = await response.json();
-                console.log('API Response:', data);
                 
                 if (data.response) {
-                    // Check what we're actually getting
-                    console.log('Response:', data.response);
-                    console.log('Confidence:', data.confidence);
-                    
-                    addMessage('assistant', data.response, data.confidence);
+                    // Pass sources to addMessage
+                    addMessage('assistant', data.response, data.confidence, data.sources);
                 } else {
                     throw new Error('Invalid response format');
                 }
@@ -290,7 +329,6 @@
                 addMessage('assistant', 'Sorry, something went wrong. Please try again.');
             }
 
-            // Hide loading
             loading.style.display = 'none';
         }
 
