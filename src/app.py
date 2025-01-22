@@ -17,6 +17,11 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 import json
 from datetime import datetime
 import numpy as np
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -546,18 +551,24 @@ async def chat(request: Request):
         data = await request.json()
         message = data.get("message", "")
         category = data.get("category", "")
+        
+        logger.info(f"Received query: {message} for category: {category}")
 
         # Get vector search results
-        results = client.query.get(
+        query = client.query.get(
             "SupportDocs",
             ["content", "metadata", "category"]
         ).with_near_text({
             "concepts": [message]
         }).with_additional(["distance"]).do()
-
-        docs = results["data"]["Get"]["SupportDocs"]
         
+        logger.info(f"Weaviate query response: {query}")
+
+        docs = query.get("data", {}).get("Get", {}).get("SupportDocs", [])
+        logger.info(f"Found {len(docs)} documents")
+
         if not docs:
+            logger.warning("No documents found in response")
             return {
                 "response": "I don't have enough information to answer that question.",
                 "confidence": 0.0,
@@ -575,18 +586,21 @@ async def chat(request: Request):
             num_docs=len(docs),
             context_completeness=context_completeness
         )
+        
+        logger.info(f"Calculated confidence: {confidence}")
 
         # Generate response using the documents
         response = generate_answer(message, docs)
+        logger.info(f"Generated response: {response}")
 
         return {
             "response": response,
             "confidence": confidence,
-            "results": docs[:5]  # Keep top 5 results for reference
+            "results": docs[:5]
         }
 
     except Exception as e:
-        print(f"Error in chat endpoint: {str(e)}")
+        logger.error(f"Error in chat endpoint: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 @app.get("/diagnose")
