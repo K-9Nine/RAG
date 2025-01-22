@@ -367,96 +367,51 @@ async def get_count():
 
 @app.get("/documents")
 async def get_documents():
-    """Get all documents, combining chunks"""
+    """Get list of documents with pagination"""
     try:
-        client = weaviate.Client(
-            url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
-        )
-        
-        print("Fetching documents from Weaviate...")
-        
-        # First, let's see what we're getting from the database
+        # Query documents
         result = (
             client.query
-            .get("SupportDocs", ["content", "metadata", "category", "originalMetadata", "chunkIndex", "totalChunks"])
-            .with_additional(["id"])
+            .get("SupportDocs", [
+                "content", 
+                "metadata", 
+                "category",
+                "chunkIndex",
+                "totalChunks"
+            ])
+            .with_additional(["id"])  # Get document IDs
+            .with_limit(50)  # Limit to 50 documents per page
             .do()
         )
         
+        logger.info(f"Documents query result: {result}")  # Debug log
+        
         if not result or "data" not in result or "Get" not in result["data"] or "SupportDocs" not in result["data"]["Get"]:
-            print("No documents found")
+            logger.warning("No documents found in query result")
             return {"documents": []}
-        
-        docs = result["data"]["Get"]["SupportDocs"]
-        print(f"Found {len(docs)} document chunks")
-        
-        # Group chunks by original metadata and category
-        documents = {}
-        for doc in docs:
-            try:
-                # Extract values with defaults
-                metadata = doc.get('originalMetadata', doc.get('metadata', ''))
-                category = doc.get('category', '')
-                content = doc.get('content', '')
-                doc_id = doc.get('_additional', {}).get('id', '')
-                
-                # Create a key for grouping
-                key = f"{metadata}_{category}"
-                
-                # Initialize document entry if it doesn't exist
-                if key not in documents:
-                    documents[key] = {
-                        "content": [],
-                        "metadata": metadata,
-                        "category": category,
-                        "id": doc_id
-                    }
-                
-                # Append content (we'll sort later if chunk info exists)
-                documents[key]["content"].append(content)
-                
-                # Try to get chunk information
-                try:
-                    chunk_index = int(doc.get('chunkIndex', -1))
-                    total_chunks = int(doc.get('totalChunks', 1))
-                    if chunk_index >= 0:
-                        # Ensure content list is long enough
-                        while len(documents[key]["content"]) < total_chunks:
-                            documents[key]["content"].append("")
-                        # Place content in correct position
-                        documents[key]["content"][chunk_index] = content
-                except (TypeError, ValueError) as e:
-                    print(f"No valid chunk information for document: {e}")
-                    # Keep the content appended at the end
-                
-            except Exception as e:
-                print(f"Error processing document: {str(e)}")
-                continue
+            
+        documents = result["data"]["Get"]["SupportDocs"]
+        logger.info(f"Found {len(documents)} documents")  # Debug log
         
         # Format documents for display
         formatted_docs = []
-        for doc in documents.values():
-            try:
-                # Filter out empty strings and join content
-                content = " ".join(filter(None, doc["content"]))
-                if content:
-                    formatted_docs.append({
-                        "id": doc["id"],
-                        "content": content,
-                        "metadata": doc["metadata"],
-                        "category": doc["category"],
-                        "chunks": len(doc["content"])
-                    })
-            except Exception as e:
-                print(f"Error formatting document: {str(e)}")
-                continue
+        for doc in documents:
+            formatted_doc = {
+                "id": doc.get("_additional", {}).get("id", ""),
+                "content": doc.get("content", ""),
+                "metadata": doc.get("metadata", ""),
+                "category": doc.get("category", "unknown"),
+                "chunk_info": f"Chunk {doc.get('chunkIndex', 0) + 1} of {doc.get('totalChunks', 1)}"
+            }
+            formatted_docs.append(formatted_doc)
+            
+        logger.info(f"Returning {len(formatted_docs)} formatted documents")  # Debug log
         
-        print(f"Returning {len(formatted_docs)} documents")
         return {"documents": formatted_docs}
             
     except Exception as e:
-        print(f"Error in get_documents: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error fetching documents: {str(e)}", exc_info=True)
+        return {"error": str(e)}
 
 @app.delete("/delete/{doc_id}")
 async def delete_document(doc_id: str):
