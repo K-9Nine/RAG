@@ -296,14 +296,7 @@
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
 
-        async function sendMessage() {
-            const message = userInput.value.trim();
-            if (!message || !currentCategory) return;
-
-            userInput.value = '';
-            addMessage('user', message);
-            loading.style.display = 'block';
-
+        async function sendMessage(message, category) {
             try {
                 const response = await fetch('/query', {
                     method: 'POST',
@@ -312,24 +305,24 @@
                     },
                     body: JSON.stringify({
                         query: message,
-                        category: currentCategory
+                        category: category || null
                     })
                 });
-
-                const data = await response.json();
                 
-                if (data.response) {
-                    // Pass sources to addMessage
-                    addMessage('assistant', data.response, data.confidence, data.sources);
-                } else {
-                    throw new Error('Invalid response format');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                return data;
             } catch (error) {
                 console.error('Error:', error);
-                addMessage('assistant', 'Sorry, something went wrong. Please try again.');
+                throw error;
             }
-
-            loading.style.display = 'none';
         }
 
         // Allow sending message with Enter key
@@ -346,27 +339,25 @@
         document.getElementById('chatForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const userInput = document.getElementById('userInput').value;
-            
-            // Get current category from URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             const category = urlParams.get('category');
             
             try {
-                const response = await fetch('/query', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        query: userInput,
-                        category: category
-                    })
-                });
+                // Add user message to chat
+                addMessageToChat('user', userInput);
                 
-                const data = await response.json();
-                // ... rest of your existing chat display code ...
+                // Clear input
+                document.getElementById('userInput').value = '';
+                
+                // Get AI response
+                const response = await sendMessage(userInput, category);
+                
+                // Add AI response to chat
+                addMessageToChat('assistant', response.answer, response);
+                
             } catch (error) {
                 console.error('Error:', error);
+                addMessageToChat('error', 'Sorry, there was an error processing your request.');
             }
         });
     </script>

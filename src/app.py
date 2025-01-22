@@ -540,66 +540,83 @@ def calculate_confidence(
     
     return round(confidence, 2)
 
-@app.post("/chat")
-async def chat(request: Request):
+class QueryRequest(BaseModel):
+    query: str
+    category: str | None = None
+
+@app.post("/query")
+async def query_documents(request: QueryRequest):
     try:
-        data = await request.json()
-        message = data.get("message", "")
-        category = data.get("category", "")
+        # Build vector search query
+        vector_query = (
+            client.query.get(
+                "SupportDocs",
+                ["content", "metadata", "category"]
+            )
+            .with_near_text({
+                "concepts": [request.query]
+            })
+            .with_additional(["distance"])
+        )
         
-        logger.info(f"Received query: {message} for category: {category}")
-
-        # Get vector search results
-        query = client.query.get(
-            "SupportDocs",
-            ["content", "metadata", "category"]
-        ).with_near_text({
-            "concepts": [message]
-        }).with_additional(["distance"]).do()
+        # Add category filter if specified
+        if request.category and request.category != 'all':
+            vector_query = vector_query.with_where({
+                "path": ["category"],
+                "operator": "Equal",
+                "valueString": request.category
+            })
         
-        logger.info(f"Weaviate query response: {query}")
-
-        docs = query.get("data", {}).get("Get", {}).get("SupportDocs", [])
-        logger.info(f"Found {len(docs)} documents")
-
-        if not docs:
-            logger.warning("No documents found in response")
-            return {
-                "response": "I don't have enough information to answer that question.",
-                "confidence": 0.0,
-                "sources": [],
-                "results": []
-            }
-
-        # Calculate confidence score
+        # Execute query
+        results = vector_query.do()
+        
+        if not results.get("data", {}).get("Get", {}).get("SupportDocs"):
+            return {"answer": "I don't have enough information to answer that question.",
+                    "confidence": 0.0}
+            
+        # Extract relevant documents
+        docs = results["data"]["Get"]["SupportDocs"]
         distances = [d["_additional"]["distance"] for d in docs]
-        vector_score = 1 - min(distances) if distances else 0
-        context_words = sum(len(d["content"].split()) for d in docs)
-        context_completeness = min(context_words / 100, 1.0)
         
+        # Calculate vector similarity score (1 - normalized distance)
+        vector_score = 1 - min(distances) if distances else 0
+        
+        # Calculate context completeness
+        context_words = sum(len(d["content"].split()) for d in docs)
+        context_completeness = min(context_words / 100, 1.0)  # Normalize to 0-1
+        
+        # Generate answer using the documents
+        answer = generate_answer(request.query, docs)
+        
+        # Calculate confidence
         confidence = calculate_confidence(
             vector_score=vector_score,
             num_docs=len(docs),
             context_completeness=context_completeness
         )
         
-        logger.info(f"Calculated confidence: {confidence}")
-
-        # Generate response using the documents
-        response, used_sources = generate_answer(message, docs)
-        logger.info(f"Generated response: {response}")
-        logger.info(f"Used sources: {used_sources}")
-
+        confidence_label = get_confidence_label(confidence)
+        
         return {
-            "response": response,
+            "answer": answer,
             "confidence": confidence,
-            "sources": used_sources,
-            "results": docs[:5]
+            "confidence_label": confidence_label,
+            "sources": [d["content"] for d in docs[:3]],  # Top 3 sources
+            "category": request.category  # Include category in response
         }
-
+        
     except Exception as e:
-        logger.error(f"Error in chat endpoint: {str(e)}", exc_info=True)
+        logger.error(f"Error in query_documents: {str(e)}")
         return {"error": str(e)}
+
+def get_confidence_label(score: float) -> str:
+    """Convert confidence score to human-readable label"""
+    if score >= 0.8:
+        return "High Confidence"
+    elif score >= 0.5:
+        return "Medium Confidence"
+    else:
+        return "Low Confidence"
 
 @app.get("/diagnose")
 async def diagnose_documents():
@@ -1121,80 +1138,6 @@ async def cleanup_existing_data():
     except Exception as e:
         print(f"Error in cleanup_existing_data: {str(e)}")
         return {"error": str(e)}
-
-@app.post("/query")
-async def query_documents(query: str, category: str = None):
-    try:
-        # Build vector search query
-        vector_query = (
-            client.query.get(
-                "SupportDocs",
-                ["content", "metadata", "category"]
-            )
-            .with_near_text({
-                "concepts": [query]
-            })
-            .with_additional(["distance"])
-        )
-        
-        # Add category filter if specified
-        if category and category != 'all':
-            vector_query = vector_query.with_where({
-                "path": ["category"],
-                "operator": "Equal",
-                "valueString": category
-            })
-        
-        # Execute query
-        results = vector_query.do()
-        
-        if not results.get("data", {}).get("Get", {}).get("SupportDocs"):
-            return {"answer": "I don't have enough information to answer that question.",
-                    "confidence": 0.0}
-            
-        # Extract relevant documents
-        docs = results["data"]["Get"]["SupportDocs"]
-        distances = [d["_additional"]["distance"] for d in docs]
-        
-        # Calculate vector similarity score (1 - normalized distance)
-        vector_score = 1 - min(distances) if distances else 0
-        
-        # Calculate context completeness
-        context_words = sum(len(d["content"].split()) for d in docs)
-        context_completeness = min(context_words / 100, 1.0)  # Normalize to 0-1
-        
-        # Generate answer using the documents
-        answer = generate_answer(query, docs)
-        
-        # Calculate confidence
-        confidence = calculate_confidence(
-            vector_score=vector_score,
-            num_docs=len(docs),
-            context_completeness=context_completeness
-        )
-        
-        confidence_label = get_confidence_label(confidence)
-        
-        return {
-            "answer": answer,
-            "confidence": confidence,
-            "confidence_label": confidence_label,
-            "sources": [d["content"] for d in docs[:3]],  # Top 3 sources
-            "category": category  # Include category in response
-        }
-        
-    except Exception as e:
-        logger.error(f"Error in query_documents: {str(e)}")
-        return {"error": str(e)}
-
-def get_confidence_label(score: float) -> str:
-    """Convert confidence score to human-readable label"""
-    if score >= 0.8:
-        return "High Confidence"
-    elif score >= 0.5:
-        return "Medium Confidence"
-    else:
-        return "Low Confidence"
 
 @app.get("/document-management")
 async def document_management_page():
