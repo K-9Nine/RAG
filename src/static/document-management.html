@@ -170,6 +170,35 @@
             color: #721c24;
             display: block;
         }
+        
+        .category-filters {
+            margin: 20px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-button {
+            padding: 8px 16px;
+            border: 2px solid #007bff;
+            border-radius: 20px;
+            background: white;
+            color: #007bff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-button:hover {
+            background: #e7f1ff;
+        }
+        
+        .filter-button.active {
+            background: #007bff;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -180,6 +209,14 @@
                 <a href="/" class="nav-link">Back to Chat</a>
                 <a href="/upload" class="nav-link">Upload Documents</a>
             </div>
+        </div>
+
+        <div class="category-filters">
+            <button class="filter-button" data-category="all">All Documents</button>
+            <button class="filter-button" data-category="email">Email</button>
+            <button class="filter-button" data-category="phone">Phone System</button>
+            <button class="filter-button" data-category="fibre">Fibre Leased Line</button>
+            <button class="filter-button" data-category="broadband">Broadband</button>
         </div>
 
         <div class="upload-section">
@@ -262,13 +299,19 @@
         // Move variables to window scope for debugging
         window.currentPage = 1;
         window.pageSize = 10;
+        window.currentCategory = 'all';
 
         async function loadDocuments() {
             try {
-                console.log(`Loading page ${window.currentPage}`); // Debug log
-                const response = await fetch(`/documents?page=${window.currentPage}&page_size=${window.pageSize}`);
+                console.log(`Loading page ${window.currentPage} for category ${window.currentCategory}`);
+                let url = `/documents?page=${window.currentPage}&page_size=${window.pageSize}`;
+                if (window.currentCategory !== 'all') {
+                    url += `&category=${window.currentCategory}`;
+                }
+                
+                const response = await fetch(url);
                 const data = await response.json();
-                console.log('Response data:', data); // Debug log
+                console.log('Response data:', data);
                 
                 const documentList = document.getElementById('documentList');
                 const prevButton = document.getElementById('prevPage');
@@ -303,19 +346,16 @@
         // Add the updateStats function
         async function updateStats() {
             try {
-                // Get total document count
-                const countResponse = await fetch('/count');
+                const countResponse = await fetch(window.currentCategory === 'all' 
+                    ? '/count' 
+                    : `/count?category=${window.currentCategory}`
+                );
                 const countData = await countResponse.json();
-                if (countData.count !== undefined) {
-                    document.getElementById('documentCount').textContent = countData.count;
-                }
+                document.getElementById('documentCount').textContent = countData.count;
                 
-                // Get categories
                 const categoriesResponse = await fetch('/categories');
                 const categoriesData = await categoriesResponse.json();
-                if (categoriesData.categories) {
-                    document.getElementById('categoryCount').textContent = categoriesData.categories.length;
-                }
+                document.getElementById('categoryCount').textContent = categoriesData.categories.length;
             } catch (error) {
                 console.error('Error updating stats:', error);
             }
@@ -408,7 +448,29 @@
                 }
             });
 
+            // Add category filter setup
+            function setupCategoryFilters() {
+                const buttons = document.querySelectorAll('.filter-button');
+                buttons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        // Update active state
+                        buttons.forEach(b => b.classList.remove('active'));
+                        button.classList.add('active');
+                        
+                        // Update current category and reload
+                        window.currentCategory = button.dataset.category;
+                        window.currentPage = 1; // Reset to first page
+                        loadDocuments();
+                        updateStats();
+                    });
+                });
+                
+                // Set initial active state
+                document.querySelector('[data-category="all"]').classList.add('active');
+            }
+
             // Initial load
+            setupCategoryFilters();
             loadDocuments();
             updateStats();  // Add this line
         });

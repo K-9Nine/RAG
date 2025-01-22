@@ -368,38 +368,33 @@ async def get_count():
 @app.get("/documents")
 async def get_documents(
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=10, ge=1, le=100)
+    page_size: int = Query(default=10, ge=1, le=100),
+    category: str = Query(default=None)
 ):
-    """Get list of documents with pagination"""
+    """Get list of documents with pagination and category filter"""
     try:
-        logger.info(f"Fetching documents - page: {page}, page_size: {page_size}")
+        logger.info(f"Fetching documents - page: {page}, page_size: {page_size}, category: {category}")
         
-        # Calculate offset
-        offset = (page - 1) * page_size
+        # Build query
+        query = client.query.get("SupportDocs", [
+            "content", 
+            "metadata", 
+            "category"
+        ]).with_additional(["id"])
         
-        # Get total count first
-        count_result = (
-            client.query
-            .aggregate("SupportDocs")
-            .with_meta_count()
-            .do()
-        )
+        # Add category filter if specified
+        if category and category != 'all':
+            query = query.with_where({
+                "path": ["category"],
+                "operator": "Equal",
+                "valueString": category
+            })
         
-        total_documents = count_result.get("data", {}).get("Aggregate", {}).get("SupportDocs", [{}])[0].get("meta", {}).get("count", 0)
+        # Add pagination
+        query = query.with_limit(page_size).with_offset((page - 1) * page_size)
         
-        # Query documents with pagination
-        result = (
-            client.query
-            .get("SupportDocs", [
-                "content", 
-                "metadata", 
-                "category"
-            ])
-            .with_additional(["id"])
-            .with_limit(page_size)
-            .with_offset(offset)
-            .do()
-        )
+        # Execute query
+        result = query.do()
         
         if not result or "data" not in result or "Get" not in result["data"] or "SupportDocs" not in result["data"]["Get"]:
             return {
@@ -414,32 +409,30 @@ async def get_documents(
             
         documents = result["data"]["Get"]["SupportDocs"]
         
-        # Format documents for display
-        formatted_docs = []
-        for doc in documents:
-            formatted_doc = {
-                "id": doc.get("_additional", {}).get("id", ""),
-                "content": doc.get("content", ""),
-                "metadata": doc.get("metadata", ""),
-                "category": doc.get("category", "unknown")
-            }
-            formatted_docs.append(formatted_doc)
+        # Get total count for pagination
+        count_query = client.query.aggregate("SupportDocs").with_meta_count()
+        if category and category != 'all':
+            count_query = count_query.with_where({
+                "path": ["category"],
+                "operator": "Equal",
+                "valueString": category
+            })
+        count_result = count_query.do()
+        total_documents = count_result.get("data", {}).get("Aggregate", {}).get("SupportDocs", [{}])[0].get("meta", {}).get("count", 0)
         
-        # Calculate pagination info
-        total_pages = (total_documents + page_size - 1) // page_size
-        
+        # Format response
         return {
-            "documents": formatted_docs,
+            "documents": documents,
             "pagination": {
                 "total": total_documents,
                 "page": page,
                 "page_size": page_size,
-                "total_pages": total_pages
+                "total_pages": (total_documents + page_size - 1) // page_size
             }
         }
             
     except Exception as e:
-        logger.error(f"Error fetching documents: {str(e)}", exc_info=True)
+        logger.error(f"Error fetching documents: {str(e)}")
         return {"error": str(e), "documents": []}
 
 @app.delete("/delete/{doc_id}")
