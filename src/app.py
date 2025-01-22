@@ -369,6 +369,16 @@ async def get_count():
 async def get_documents():
     """Get list of documents with pagination"""
     try:
+        logger.info("Starting document fetch...")
+        
+        # Test direct Weaviate query first
+        test_query = {
+            "class": "SupportDocs",
+            "fields": ["content", "metadata", "category", "chunkIndex", "totalChunks"]
+        }
+        
+        logger.info(f"Executing test query: {test_query}")
+        
         # Query documents
         result = (
             client.query
@@ -379,19 +389,32 @@ async def get_documents():
                 "chunkIndex",
                 "totalChunks"
             ])
-            .with_additional(["id"])  # Get document IDs
-            .with_limit(50)  # Limit to 50 documents per page
+            .with_additional(["id"])
+            .with_limit(50)
             .do()
         )
         
-        logger.info(f"Documents query result: {result}")  # Debug log
+        # Log the raw response
+        logger.info(f"Raw Weaviate response: {json.dumps(result, indent=2)}")
         
-        if not result or "data" not in result or "Get" not in result["data"] or "SupportDocs" not in result["data"]["Get"]:
-            logger.warning("No documents found in query result")
-            return {"documents": []}
+        if not result:
+            logger.error("Query returned None")
+            return {"documents": [], "error": "Query returned None"}
+            
+        if "data" not in result:
+            logger.error("No 'data' in response")
+            return {"documents": [], "error": "No data in response"}
+            
+        if "Get" not in result["data"]:
+            logger.error("No 'Get' in data")
+            return {"documents": [], "error": "No Get in data"}
+            
+        if "SupportDocs" not in result["data"]["Get"]:
+            logger.error("No 'SupportDocs' in Get")
+            return {"documents": [], "error": "No SupportDocs in Get"}
             
         documents = result["data"]["Get"]["SupportDocs"]
-        logger.info(f"Found {len(documents)} documents")  # Debug log
+        logger.info(f"Found {len(documents)} documents")
         
         # Format documents for display
         formatted_docs = []
@@ -405,13 +428,24 @@ async def get_documents():
             }
             formatted_docs.append(formatted_doc)
             
-        logger.info(f"Returning {len(formatted_docs)} formatted documents")  # Debug log
+        logger.info(f"Returning {len(formatted_docs)} formatted documents")
         
-        return {"documents": formatted_docs}
+        return {
+            "documents": formatted_docs,
+            "debug_info": {
+                "raw_count": len(documents),
+                "formatted_count": len(formatted_docs),
+                "response_structure": {
+                    "has_data": "data" in result,
+                    "has_get": "Get" in result.get("data", {}),
+                    "has_docs": "SupportDocs" in result.get("data", {}).get("Get", {})
+                }
+            }
+        }
             
     except Exception as e:
         logger.error(f"Error fetching documents: {str(e)}", exc_info=True)
-        return {"error": str(e)}
+        return {"error": str(e), "documents": []}
 
 @app.delete("/delete/{doc_id}")
 async def delete_document(doc_id: str):
