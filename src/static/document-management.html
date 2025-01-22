@@ -118,6 +118,58 @@
             background-color: #f8f9fa;
             border-radius: 4px;
         }
+        
+        .upload-section {
+            margin: 20px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .upload-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-group small {
+            display: block;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -127,6 +179,51 @@
             <div>
                 <a href="/" class="nav-link">Back to Chat</a>
                 <a href="/upload" class="nav-link">Upload Documents</a>
+            </div>
+        </div>
+
+        <div class="upload-section">
+            <h2>Upload Documents</h2>
+            
+            <!-- Single Document Upload -->
+            <div class="upload-card">
+                <h3>Single Document</h3>
+                <form id="singleUploadForm">
+                    <div class="form-group">
+                        <label for="content">Content:</label>
+                        <textarea id="content" name="content" rows="4" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="metadata">Metadata:</label>
+                        <input type="text" id="metadata" name="metadata" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="category">Category:</label>
+                        <select id="category" name="category" required>
+                            <option value="phone">Phone</option>
+                            <option value="email">Email</option>
+                            <option value="chat">Chat</option>
+                            <option value="general">General</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="primary-button">Upload Document</button>
+                </form>
+                <div id="singleUploadStatus" class="status-message"></div>
+            </div>
+
+            <!-- Bulk Upload -->
+            <div class="upload-card">
+                <h3>Bulk Upload</h3>
+                <form id="bulkUploadForm">
+                    <div class="form-group">
+                        <label for="bulkFile">Upload CSV or JSON:</label>
+                        <input type="file" id="bulkFile" name="file" accept=".csv,.json" required>
+                        <small>CSV format: content,metadata,category</small>
+                        <small>JSON format: array of {content, metadata, category} objects</small>
+                    </div>
+                    <button type="submit" class="primary-button">Upload File</button>
+                </form>
+                <div id="bulkUploadStatus" class="status-message"></div>
             </div>
         </div>
 
@@ -220,6 +317,74 @@
                 console.log('Next clicked'); // Debug log
                 window.currentPage++;
                 loadDocuments();
+            });
+
+            // Single document upload
+            document.getElementById('singleUploadForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const statusDiv = document.getElementById('singleUploadStatus');
+                statusDiv.style.display = 'block';
+                statusDiv.textContent = 'Uploading...';
+                
+                try {
+                    const formData = new FormData(e.target);
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.error) {
+                        throw new Error(result.error);
+                    }
+                    
+                    statusDiv.textContent = 'Document uploaded successfully!';
+                    statusDiv.className = 'status-message status-success';
+                    e.target.reset();
+                    
+                    // Refresh document list
+                    loadDocuments();
+                    updateStats();
+                    
+                } catch (error) {
+                    statusDiv.textContent = `Error: ${error.message}`;
+                    statusDiv.className = 'status-message status-error';
+                }
+            });
+
+            // Bulk upload
+            document.getElementById('bulkUploadForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const statusDiv = document.getElementById('bulkUploadStatus');
+                statusDiv.style.display = 'block';
+                statusDiv.textContent = 'Uploading...';
+                
+                try {
+                    const formData = new FormData(e.target);
+                    const response = await fetch('/bulk-upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.error) {
+                        throw new Error(result.error);
+                    }
+                    
+                    statusDiv.textContent = `Successfully uploaded ${result.processed} documents!`;
+                    statusDiv.className = 'status-message status-success';
+                    e.target.reset();
+                    
+                    // Refresh document list
+                    loadDocuments();
+                    updateStats();
+                    
+                } catch (error) {
+                    statusDiv.textContent = `Error: ${error.message}`;
+                    statusDiv.className = 'status-message status-error';
+                }
             });
 
             // Initial load
