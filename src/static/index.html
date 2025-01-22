@@ -377,11 +377,16 @@
         }
 
         // Form submission
-        document.getElementById('chatForm').addEventListener('submit', async function(e) {
+        const chatForm = document.getElementById('chatForm');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+
+        async function handleSubmit(e) {
             e.preventDefault();
+            console.log('Form submitted'); // Debug log
             
-            const userInput = document.getElementById('userInput').value.trim();
-            if (!userInput) {
+            const message = userInput.value.trim();
+            if (!message) {
                 addMessageToChat('error', 'Please enter a message');
                 return;
             }
@@ -391,13 +396,13 @@
             
             try {
                 // Add user message first
-                addMessageToChat('user', userInput);
+                addMessageToChat('user', message);
                 
                 // Clear input
-                document.getElementById('userInput').value = '';
+                userInput.value = '';
                 
                 // Get AI response
-                const response = await sendMessage(userInput, category);
+                const response = await sendMessage(message, category);
                 
                 // Add AI response
                 addMessageToChat('assistant', response.answer, response);
@@ -409,6 +414,20 @@
                 console.error('Error:', error);
                 addMessageToChat('error', error.message);
             }
+        }
+
+        // Add form submit event listener
+        chatForm.addEventListener('submit', handleSubmit);
+
+        // Add click event for send button
+        sendButton.addEventListener('click', handleSubmit);
+
+        // Add enter key handler for input field
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+            }
         });
 
         // Initial setup
@@ -416,18 +435,21 @@
             addChatClickHandler();
             
             // Focus input field
-            const inputField = document.getElementById('userInput');
-            if (inputField) {
-                inputField.focus();
+            if (userInput) {
+                userInput.focus();
             }
+            
+            // Debug log
+            console.log('Chat interface initialized');
         });
 
-        // Remove any inline onclick handlers from the HTML
+        // Remove any inline onclick handlers
         document.addEventListener('DOMContentLoaded', () => {
             const elements = document.querySelectorAll('[onclick]');
             elements.forEach(element => {
                 element.removeAttribute('onclick');
             });
+            console.log('Removed inline onclick handlers');
         });
     </script>
 </body>
