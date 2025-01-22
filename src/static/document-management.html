@@ -162,31 +162,22 @@
     </div>
 
     <script>
-        let currentPage = 1;
-        const pageSize = 10;
+        // Move variables to window scope for debugging
+        window.currentPage = 1;
+        window.pageSize = 10;
 
-        // Fetch and display document count
-        async function updateStats() {
-            try {
-                const countResponse = await fetch('/count');
-                const countData = await countResponse.json();
-                document.getElementById('documentCount').textContent = countData.count;
-                
-                const categoriesResponse = await fetch('/categories');
-                const categoriesData = await categoriesResponse.json();
-                document.getElementById('categoryCount').textContent = categoriesData.categories.length;
-            } catch (error) {
-                console.error('Error fetching stats:', error);
-            }
-        }
-
-        // Fetch and display documents
         async function loadDocuments() {
             try {
-                const response = await fetch(`/documents?page=${currentPage}&page_size=${pageSize}`);
+                console.log(`Loading page ${window.currentPage}`); // Debug log
+                const response = await fetch(`/documents?page=${window.currentPage}&page_size=${window.pageSize}`);
                 const data = await response.json();
+                console.log('Response data:', data); // Debug log
                 
                 const documentList = document.getElementById('documentList');
+                const prevButton = document.getElementById('prevPage');
+                const nextButton = document.getElementById('nextPage');
+                const pageInfo = document.getElementById('pageInfo');
+                
                 if (data.documents && data.documents.length > 0) {
                     documentList.innerHTML = data.documents.map(doc => `
                         <div class="document-item">
@@ -195,8 +186,16 @@
                             <strong>Metadata:</strong> ${doc.metadata}
                         </div>
                     `).join('');
+                    
+                    // Update pagination controls
+                    prevButton.disabled = window.currentPage === 1;
+                    nextButton.disabled = window.currentPage >= data.pagination.total_pages;
+                    pageInfo.textContent = `Page ${window.currentPage} of ${data.pagination.total_pages} (${data.pagination.total} documents)`;
                 } else {
                     documentList.innerHTML = '<p>No documents found</p>';
+                    prevButton.disabled = true;
+                    nextButton.disabled = true;
+                    pageInfo.textContent = 'No documents';
                 }
             } catch (error) {
                 console.error('Error loading documents:', error);
@@ -204,91 +203,34 @@
             }
         }
 
-        // Clean database
-        document.getElementById('cleanupBtn').addEventListener('click', async function() {
-            if (!confirm('Are you sure you want to clean the database? This will remove all existing documents.')) {
-                return;
-            }
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Setting up pagination controls'); // Debug log
             
-            const statusDiv = document.getElementById('adminStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.textContent = 'Cleaning database...';
-            
-            try {
-                const response = await fetch('/cleanup');
-                const result = await response.json();
-                
-                if (result.error) {
-                    throw new Error(result.error);
+            // Add event listeners for pagination buttons
+            document.getElementById('prevPage').addEventListener('click', () => {
+                console.log('Previous clicked'); // Debug log
+                if (window.currentPage > 1) {
+                    window.currentPage--;
+                    loadDocuments();
                 }
-                
-                statusDiv.textContent = 'Database cleaned successfully.';
-                statusDiv.className = 'status-message success';
-                
-                // Refresh documents and stats
+            });
+
+            document.getElementById('nextPage').addEventListener('click', () => {
+                console.log('Next clicked'); // Debug log
+                window.currentPage++;
                 loadDocuments();
-                updateStats();
-            } catch (error) {
-                statusDiv.textContent = `Error: ${error.message}`;
-                statusDiv.className = 'status-message error';
-            }
+            });
+
+            // Initial load
+            loadDocuments();
         });
 
-        // Backup database
-        document.getElementById('backupBtn').addEventListener('click', async function() {
-            const statusDiv = document.getElementById('adminStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.textContent = 'Creating backup...';
-            
-            try {
-                const response = await fetch('/backup');
-                const result = await response.json();
-                
-                if (result.error) {
-                    throw new Error(result.error);
-                }
-                
-                statusDiv.textContent = `Backup created: ${result.filename}`;
-                statusDiv.className = 'status-message success';
-            } catch (error) {
-                statusDiv.textContent = `Error: ${error.message}`;
-                statusDiv.className = 'status-message error';
-            }
-        });
-
-        // Reprocess documents
-        document.getElementById('reprocessBtn').addEventListener('click', async function() {
-            if (!confirm('Are you sure you want to reprocess all documents? This may take some time.')) {
-                return;
-            }
-            
-            const statusDiv = document.getElementById('adminStatus');
-            statusDiv.style.display = 'block';
-            statusDiv.textContent = 'Reprocessing documents...';
-            
-            try {
-                const response = await fetch('/reprocess');
-                const result = await response.json();
-                
-                if (result.error) {
-                    throw new Error(result.error);
-                }
-                
-                statusDiv.textContent = `Reprocessed ${result.processed} documents.`;
-                statusDiv.className = 'status-message success';
-                
-                // Refresh documents and stats
-                loadDocuments();
-                updateStats();
-            } catch (error) {
-                statusDiv.textContent = `Error: ${error.message}`;
-                statusDiv.className = 'status-message error';
-            }
-        });
-
-        // Initial load
-        updateStats();
-        loadDocuments();
+        // Add global error handler
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('Error: ', msg, 'URL: ', url, 'Line: ', lineNo, 'Column: ', columnNo, 'Error object: ', error);
+            return false;
+        };
     </script>
 </body>
 </html> 
