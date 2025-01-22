@@ -1123,15 +1123,30 @@ async def cleanup_existing_data():
         return {"error": str(e)}
 
 @app.post("/query")
-async def query_documents(query: str):
+async def query_documents(query: str, category: str = None):
     try:
-        # Get vector search results
-        results = client.query.get(
-            "SupportDocs",
-            ["content", "metadata", "category"]
-        ).with_near_text({
-            "concepts": [query]
-        }).with_additional(["distance"]).do()
+        # Build vector search query
+        vector_query = (
+            client.query.get(
+                "SupportDocs",
+                ["content", "metadata", "category"]
+            )
+            .with_near_text({
+                "concepts": [query]
+            })
+            .with_additional(["distance"])
+        )
+        
+        # Add category filter if specified
+        if category and category != 'all':
+            vector_query = vector_query.with_where({
+                "path": ["category"],
+                "operator": "Equal",
+                "valueString": category
+            })
+        
+        # Execute query
+        results = vector_query.do()
         
         if not results.get("data", {}).get("Get", {}).get("SupportDocs"):
             return {"answer": "I don't have enough information to answer that question.",
@@ -1164,11 +1179,12 @@ async def query_documents(query: str):
             "answer": answer,
             "confidence": confidence,
             "confidence_label": confidence_label,
-            "sources": [d["content"] for d in docs[:3]]  # Top 3 sources
+            "sources": [d["content"] for d in docs[:3]],  # Top 3 sources
+            "category": category  # Include category in response
         }
         
     except Exception as e:
-        print(f"Error in query_documents: {str(e)}")
+        logger.error(f"Error in query_documents: {str(e)}")
         return {"error": str(e)}
 
 def get_confidence_label(score: float) -> str:

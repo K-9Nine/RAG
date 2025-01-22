@@ -305,13 +305,13 @@
             loading.style.display = 'block';
 
             try {
-                const response = await fetch('/chat', {
+                const response = await fetch('/query', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ 
-                        message: message,
+                    body: JSON.stringify({
+                        query: message,
                         category: currentCategory
                     })
                 });
@@ -336,6 +336,37 @@
         userInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter' && !userInput.disabled) {
                 sendMessage();
+            }
+        });
+
+        // Add currentCategory to window scope
+        window.currentCategory = null;
+
+        // Update the chat form submission
+        document.getElementById('chatForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const userInput = document.getElementById('userInput').value;
+            
+            // Get current category from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const category = urlParams.get('category');
+            
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: userInput,
+                        category: category
+                    })
+                });
+                
+                const data = await response.json();
+                // ... rest of your existing chat display code ...
+            } catch (error) {
+                console.error('Error:', error);
             }
         });
     </script>
