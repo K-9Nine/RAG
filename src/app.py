@@ -27,6 +27,11 @@ openai_client = OpenAI(
     http_client=httpx.Client()
 )
 
+# Initialize Weaviate client
+client = weaviate.Client(
+    url="http://weaviate:8080",  # URL for the Weaviate instance
+)
+
 # Print configuration
 print("=== App Configuration ===")
 print(f"OpenAI API Key present: {'YES' if os.getenv('OPENAI_API_KEY') else 'NO'}")
