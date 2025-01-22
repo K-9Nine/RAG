@@ -274,9 +274,13 @@
                 });
 
                 const data = await response.json();
+                console.log('API Response:', data);
                 
                 if (data.response) {
-                    // Pass confidence score to addMessage
+                    // Check what we're actually getting
+                    console.log('Response:', data.response);
+                    console.log('Confidence:', data.confidence);
+                    
                     addMessage('assistant', data.response, data.confidence);
                 } else {
                     throw new Error('Invalid response format');
