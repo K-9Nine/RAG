@@ -371,30 +371,19 @@ async def get_documents():
     try:
         logger.info("Starting document fetch...")
         
-        # Test direct Weaviate query first
-        test_query = {
-            "class": "SupportDocs",
-            "fields": ["content", "metadata", "category", "chunkIndex", "totalChunks"]
-        }
-        
-        logger.info(f"Executing test query: {test_query}")
-        
-        # Query documents
+        # Query only existing fields
         result = (
             client.query
             .get("SupportDocs", [
                 "content", 
                 "metadata", 
-                "category",
-                "chunkIndex",
-                "totalChunks"
+                "category"
             ])
             .with_additional(["id"])
             .with_limit(50)
             .do()
         )
         
-        # Log the raw response
         logger.info(f"Raw Weaviate response: {json.dumps(result, indent=2)}")
         
         if not result:
@@ -423,8 +412,7 @@ async def get_documents():
                 "id": doc.get("_additional", {}).get("id", ""),
                 "content": doc.get("content", ""),
                 "metadata": doc.get("metadata", ""),
-                "category": doc.get("category", "unknown"),
-                "chunk_info": f"Chunk {doc.get('chunkIndex', 0) + 1} of {doc.get('totalChunks', 1)}"
+                "category": doc.get("category", "unknown")
             }
             formatted_docs.append(formatted_doc)
             
