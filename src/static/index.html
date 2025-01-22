@@ -336,13 +336,26 @@
         }
 
         // Handle message clicks
-        function handleMessageClick(messageText, category) {
-            if (!messageText || messageText.trim() === '') {
-                console.error('Invalid message text');
+        function handleMessageClick(event) {
+            event.preventDefault();
+            const messageElement = event.currentTarget;
+            const messageContent = messageElement.querySelector('.message-content');
+            
+            if (!messageContent) {
+                console.error('No message content found');
                 return;
             }
             
-            sendMessage(messageText, category)
+            const text = messageContent.textContent.trim();
+            if (!text) {
+                console.error('Empty message content');
+                return;
+            }
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const category = urlParams.get('category');
+            
+            sendMessage(text, category)
                 .then(response => {
                     addMessageToChat('assistant', response.answer, response);
                 })
@@ -356,15 +369,10 @@
         function addChatClickHandler() {
             const chatMessages = document.querySelectorAll('.chat-message.user');
             chatMessages.forEach(message => {
-                const messageContent = message.querySelector('.message-content');
-                if (messageContent) {
-                    const text = messageContent.textContent.trim();
-                    message.onclick = () => {
-                        const urlParams = new URLSearchParams(window.location.search);
-                        const category = urlParams.get('category');
-                        handleMessageClick(text, category);
-                    };
-                }
+                // Remove any existing click handlers
+                message.removeEventListener('click', handleMessageClick);
+                // Add new click handler
+                message.addEventListener('click', handleMessageClick);
             });
         }
 
@@ -412,6 +420,14 @@
             if (inputField) {
                 inputField.focus();
             }
+        });
+
+        // Remove any inline onclick handlers from the HTML
+        document.addEventListener('DOMContentLoaded', () => {
+            const elements = document.querySelectorAll('[onclick]');
+            elements.forEach(element => {
+                element.removeAttribute('onclick');
+            });
         });
     </script>
 </body>
