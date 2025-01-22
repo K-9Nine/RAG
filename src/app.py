@@ -508,19 +508,30 @@ async def delete_document(doc_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 def generate_answer(query: str, docs: List[Dict]) -> str:
-    """Generate a response based on the retrieved documents"""
+    """Generate a more detailed response based on the retrieved documents"""
     if not docs:
         return "I don't have enough information to answer that question."
     
+    # Sort documents by relevance (distance)
+    sorted_docs = sorted(docs, key=lambda x: x["_additional"]["distance"])
+    
     # Get the most relevant document
-    most_relevant = docs[0]["content"]
+    primary_doc = sorted_docs[0]["content"]
     
-    # For multiple documents, combine relevant information
-    if len(docs) > 1:
-        supporting_info = [doc["content"] for doc in docs[1:]]
-        # Could enhance this with better text combination logic
+    # Get supporting details from other relevant documents
+    supporting_docs = [doc["content"] for doc in sorted_docs[1:3]]
     
-    return most_relevant
+    # Combine information
+    response = primary_doc
+    
+    # Add supporting details if they provide new information
+    for doc in supporting_docs:
+        if doc not in response:  # Avoid duplicate information
+            additional_info = doc.split(". ")[0]  # Take first sentence
+            if len(response + ". " + additional_info) <= 500:  # Keep response concise
+                response += ". " + additional_info
+    
+    return response
 
 def calculate_confidence(
     vector_score: float,
