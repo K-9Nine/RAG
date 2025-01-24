@@ -1403,6 +1403,23 @@ documents = [
     {
         "content": "CallSwitch number blocking features: Block individual numbers or number patterns. Blocked callers can be sent to voicemail, custom message, or busy tone. Also known as blacklisting. Access via Voice > Call Routing > Blocked Numbers.",
         "metadata": '{"type": "callswitch", "category": "call-routing", "product": "callswitch", "feature": "number-blocking"}'
+    },
+    {
+        "content": "To block international calls in CallSwitch: 1) Log into CallSwitch portal 2) Navigate to Voice > Call Routing > International Blocking 3) Enable 'Block International Calls' 4) Optionally, add allowed countries in the exceptions list 5) Click Save. All international calls will be blocked except for allowed countries.",
+        "metadata": '{"type": "callswitch", "category": "call-routing", "product": "callswitch", "feature": "international-blocking"}'
+    },
+    {
+        "content": "CallSwitch international call blocking features: Block all international numbers, Allow specific countries, Custom messages for blocked calls. Access via Voice > Call Routing > International Blocking. Useful for preventing toll fraud and controlling costs.",
+        "metadata": '{"type": "callswitch", "category": "call-routing", "product": "callswitch", "feature": "international-blocking"}'
+    },
+    # Add these security-related documents
+    {
+        "content": "CallSwitch toll fraud prevention: 1) Enable international call blocking 2) Set up allowed country exceptions 3) Configure maximum cost limits 4) Block anonymous inbound calls 5) Monitor call patterns. Access security settings via Voice > Call Routing > Security.",
+        "metadata": '{"type": "callswitch", "category": "security", "product": "callswitch", "feature": "fraud-prevention"}'
+    },
+    {
+        "content": "CallSwitch security features: SRTP encryption for voice traffic, TLS for signaling security, Anonymous call blocking, Cost limits, and Destination restrictions. Configure via Voice > Call Routing > Security to protect against unauthorized usage.",
+        "metadata": '{"type": "callswitch", "category": "security", "product": "callswitch", "feature": "security-features"}'
     }
 ]
 
