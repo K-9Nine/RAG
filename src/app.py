@@ -18,10 +18,27 @@ import json
 from datetime import datetime
 import numpy as np
 import logging
+from pydantic_settings import BaseSettings
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Add settings class
+class Settings(BaseSettings):
+    OPENAI_API_KEY: str
+    WEAVIATE_URL: str = "http://weaviate:8080"
+    MODEL_NAME: str = "gpt-3.5-turbo"
+    COLLECTION_NAME: str = "SupportDocs"
+    MAX_CONTEXT_DOCS: int = 3
+    TEMPERATURE: float = 0.7
+    MAX_TOKENS: int = 300
+
+    class Config:
+        env_file = ".env"
+
+# Initialize settings
+settings = Settings()
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -54,29 +71,42 @@ app.mount("/static", StaticFiles(directory="src/static"), name="static")
 # Initialize templates
 templates = Jinja2Templates(directory="templates")
 
+# Add this class near the top with other imports
+class Document(BaseModel):
+    content: str
+    metadata: str
+
 @app.get("/")
-async def read_root():
-    return FileResponse("src/static/index.html")
+async def root():
+    return FileResponse('src/static/index.html')
 
 async def get_relevant_context(query: str, category: str) -> Dict:
     """Get relevant context from Weaviate"""
     try:
-        client = weaviate.Client(
-            url=os.getenv("WEAVIATE_URL", "http://weaviate:8080")
-        )
+        # Normalize search terms
+        search_terms = [query]
         
-        print(f"\nProcessing search: '{query}' in category: {category}")
+        # Add synonyms for common terms
+        term_synonyms = {
+            "block": ["blacklist", "block", "restrict", "ban"],
+            "blacklist": ["block", "blacklist", "restrict", "ban"],
+            "user": ["user", "account", "person"],
+            "add": ["add", "create", "new", "setup"]
+        }
         
+        # Add relevant synonyms to search terms
+        for word in query.lower().split():
+            if word in term_synonyms:
+                search_terms.extend(term_synonyms[word])
+        
+        print(f"\nProcessing search with terms: {search_terms}")
+        
+        # Use expanded search terms in query
         result = (
             client.query
             .get("SupportDocs", ["content", "metadata"])
-            .with_where({
-                "path": ["category"],
-                "operator": "Equal",
-                "valueString": category
-            })
             .with_near_text({
-                "concepts": [query]
+                "concepts": search_terms
             })
             .with_limit(5)
             .do()
@@ -1151,3 +1181,79 @@ async def cleanup_existing_data():
 async def document_management_page():
     """Render the document management page"""
     return FileResponse("src/static/document-management.html")
+
+class ChatRequest(BaseModel):
+    message: str
+    user_id: str
+    chat_history: List[dict] = []
+    category: Optional[str] = None
+
+@app.post("/api/chat")
+async def chat(request: ChatRequest):
+    try:
+        # Get relevant context based on category
+        context = await get_relevant_context(request.message, request.category or "phone")
+        
+        # Log the context for debugging
+        logging.info(f"Context: {context}")
+        
+        # Prepare prompt with context
+        system_prompt = """You are a helpful IT support assistant. Use the provided context to answer questions.
+        If you cannot find relevant information in the context, say so."""
+        
+        messages = [
+            {"role": "system", "content": system_prompt},
+            *request.chat_history,
+            {"role": "user", "content": f"Context: {context['context_text']}\n\nQuestion: {request.message}"}
+        ]
+        
+        # Log the messages for debugging
+        logging.info(f"Messages: {messages}")
+        
+        # Get OpenAI response using environment variables directly
+        response = openai_client.chat.completions.create(
+            model=os.getenv("MODEL_NAME", "gpt-3.5-turbo"),
+            messages=messages,
+            temperature=float(os.getenv("TEMPERATURE", "0.7")),
+            max_tokens=int(os.getenv("MAX_TOKENS", "300"))
+        )
+        
+        return {"response": response.choices[0].message.content}
+        
+    except Exception as e:
+        logging.error(f"Error in chat endpoint: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail={"error": str(e), "type": type(e).__name__}
+        )
+
+@app.post("/api/load-documents")
+async def load_documents(documents: List[Document]):
+    try:
+        doc_list = [{"content": doc.content, "metadata": doc.metadata} for doc in documents]
+        
+        client = weaviate.Client(
+            url=os.getenv("WEAVIATE_URL", "http://weaviate:8080"),
+            additional_headers={
+                "X-OpenAI-Api-Key": os.getenv("OPENAI_API_KEY")
+            }
+        )
+        
+        # Add documents to Weaviate
+        with client.batch as batch:
+            batch.batch_size = 100
+            for doc in doc_list:
+                properties = {
+                    "content": doc["content"],
+                    "metadata": doc["metadata"],
+                    "category": json.loads(doc["metadata"]).get("type", "unknown")
+                }
+                batch.add_data_object(
+                    data_object=properties,
+                    class_name="SupportDocs"
+                )
+        
+        return {"status": "success", "message": f"Added {len(documents)} documents"}
+    except Exception as e:
+        print(f"Error loading documents: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -1,4 +1,5 @@
-import requests
+import weaviate
+import os
 import json
 import sys
 
@@ -1385,23 +1386,57 @@ documents = [
     {
         "content": "CallSwitch Audio Management: Download (blue arrow), Play (red button), Edit (blue icon), Delete (red bin). Search Audio Files feature for quick location. Files stored in Custom tab.",
         "metadata": '{"type": "feature", "category": "audio", "product": "callswitch", "feature": "file-management"}'
+    },
+    # Add these documents to the documents list
+    {
+        "content": "To add a user in CallSwitch: 1) Log into CallSwitch portal 2) Navigate to Users section 3) Click 'Add New User' 4) Fill in required details like name, email, extension 5) Select user permissions 6) Click Save to create the user",
+        "metadata": '{"type": "callswitch", "category": "user-management", "product": "callswitch"}'
+    },
+    {
+        "content": "CallSwitch user roles and permissions: Admin (full system access), Manager (user/group management), User (basic features only). When adding users, carefully consider required access levels.",
+        "metadata": '{"type": "callswitch", "category": "user-management", "product": "callswitch"}'
+    },
+    {
+        "content": "To block or blacklist a number in CallSwitch: 1) Log into CallSwitch portal 2) Go to Voice > Call Routing 3) Select 'Blocked Numbers' 4) Click 'Add Number' 5) Enter the phone number to block 6) Click Save. Blocked numbers will hear a busy tone or custom message.",
+        "metadata": '{"type": "callswitch", "category": "call-routing", "product": "callswitch", "feature": "number-blocking"}'
+    },
+    {
+        "content": "CallSwitch number blocking features: Block individual numbers or number patterns. Blocked callers can be sent to voicemail, custom message, or busy tone. Also known as blacklisting. Access via Voice > Call Routing > Blocked Numbers.",
+        "metadata": '{"type": "callswitch", "category": "call-routing", "product": "callswitch", "feature": "number-blocking"}'
     }
 ]
 
 def load_test_documents():
     try:
-        response = requests.post(
-            "http://localhost:8088/api/load-documents",  # Updated to correct port
-            json=documents
+        # Connect to Weaviate directly
+        client = weaviate.Client(
+            url=os.getenv("WEAVIATE_URL", "http://weaviate:8080"),
+            additional_headers={
+                "X-OpenAI-Api-Key": os.getenv("OPENAI_API_KEY")
+            }
         )
-        print(f"Status code: {response.status_code}")
-        print("Response:", response.json())
-        return response.status_code == 200
-    except requests.exceptions.RequestException as e:
-        print(f"Error making request: {e}")
-        return False
-    except json.JSONDecodeError as e:
-        print(f"Error decoding response: {e}")
+        
+        print("Connected to Weaviate")
+        
+        # Add documents to Weaviate
+        with client.batch as batch:
+            batch.batch_size = 100
+            for doc in documents:
+                properties = {
+                    "content": doc["content"],
+                    "metadata": doc["metadata"],
+                    "category": json.loads(doc["metadata"]).get("type", "unknown")
+                }
+                batch.add_data_object(
+                    data_object=properties,
+                    class_name="SupportDocs"
+                )
+        
+        print(f"Successfully loaded {len(documents)} documents")
+        return True
+        
+    except Exception as e:
+        print(f"Error loading documents: {str(e)}")
         return False
 
 if __name__ == "__main__":

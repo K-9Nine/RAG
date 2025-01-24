@@ -187,183 +187,104 @@
         .source-metadata small {
             margin-right: 10px;
         }
+        
+        .category-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .category-button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .category-button:hover {
+            background: #0056b3;
+        }
     </style>
 </head>
 <body>
-    <h1>IT Support Assistant</h1>
     <div class="chat-container">
-        <div class="category-selector" id="categorySelector">
+        <h1>IT Support Assistant</h1>
+        <div class="category-buttons">
             <button class="category-button" onclick="selectCategory('phone')">Phone System</button>
             <button class="category-button" onclick="selectCategory('fibre')">Fibre Leased Line</button>
             <button class="category-button" onclick="selectCategory('email')">Email</button>
             <button class="category-button" onclick="selectCategory('broadband')">Broadband</button>
         </div>
-        
-        <div class="category-description" id="categoryDescription">
-            Select a category above to get started
-        </div>
-        
-        <div class="chat-history" id="chatHistory"></div>
-        
-        <div class="loading" id="loading">Thinking...</div>
-        
+        <div class="chat-box" id="chatBox"></div>
         <div class="input-container">
-            <input type="text" id="userInput" placeholder="Ask your IT support question..." disabled>
-            <button onclick="sendMessage()" id="sendButton" disabled>Send</button>
+            <input type="text" id="userInput" placeholder="Ask your IT support question..."
+                   onkeypress="if(event.key === 'Enter') sendMessage()">
+            <button onclick="sendMessage()">Send</button>
         </div>
     </div>
 
     <script>
-        // Global variables
-        let currentCategory = 'all';
-        const chatForm = document.getElementById('chatForm');
-        const userInput = document.getElementById('userInput');
-        const sendButton = document.getElementById('sendButton');
+        let chatHistory = [];
+        let currentCategory = 'phone';
 
-        // Category selection
         function selectCategory(category) {
             currentCategory = category;
-            // Update UI to show active category
-            document.querySelectorAll('.filter-button').forEach(button => {
-                button.classList.remove('active');
-            });
-            document.querySelector(`[data-category="${category}"]`)?.classList.add('active');
-            // Reload documents with new category
-            loadDocuments();
+            chatBox.innerHTML = '';
+            addMessageToChat('Assistant', `Selected ${category} category. How can I help you?`);
         }
 
-        async function sendMessage(message, category) {
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            input.value = '';
+            addMessageToChat('User', message);
+
             try {
-                if (!message || message.trim() === '') {
-                    throw new Error('Please enter a message');
-                }
-                
-                console.log('Sending request:', { 
-                    query: message, 
-                    category: category || currentCategory 
-                });
-                
-                const response = await fetch('/query', {
+                const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        query: message,
-                        category: category || currentCategory
+                        message: message,
+                        user_id: 'user123',
+                        chat_history: chatHistory,
+                        category: currentCategory
                     })
                 });
                 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Server error:', errorData);
-                    throw new Error(errorData.detail || 'Server error');
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const data = await response.json();
-                console.log('Response:', data);
-                
-                return data;
-            } catch (error) {
-                console.error('Error in sendMessage:', error);
-                throw error;
-            }
-        }
-
-        // Handle message clicks
-        function handleMessageClick(event) {
-            event.preventDefault();
-            const messageElement = event.currentTarget;
-            const messageContent = messageElement.querySelector('.message-content');
-            
-            if (!messageContent) {
-                console.error('No message content found');
-                return;
-            }
-            
-            const text = messageContent.textContent.trim();
-            if (!text) {
-                console.error('Empty message content');
-                return;
-            }
-            
-            sendMessage(text, currentCategory)
-                .then(response => {
-                    addMessageToChat('assistant', response.answer, response);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    addMessageToChat('error', error.message);
-                });
-        }
-
-        // Update click handler for chat messages
-        function addChatClickHandler() {
-            const chatMessages = document.querySelectorAll('.chat-message.user');
-            chatMessages.forEach(message => {
-                message.removeEventListener('click', handleMessageClick);
-                message.addEventListener('click', handleMessageClick);
-            });
-        }
-
-        async function handleSubmit(e) {
-            e.preventDefault();
-            console.log('Form submitted');
-            
-            const message = userInput.value.trim();
-            if (!message) {
-                addMessageToChat('error', 'Please enter a message');
-                return;
-            }
-            
-            try {
-                addMessageToChat('user', message);
-                userInput.value = '';
-                
-                const response = await sendMessage(message, currentCategory);
-                addMessageToChat('assistant', response.answer, response);
-                addChatClickHandler();
-                
+                if (data && data.response) {
+                    addMessageToChat('Assistant', data.response);
+                    chatHistory.push({role: 'assistant', content: data.response});
+                } else {
+                    throw new Error('Invalid response format');
+                }
             } catch (error) {
                 console.error('Error:', error);
-                addMessageToChat('error', error.message);
+                addMessageToChat('System', 'Error: Unable to get a response. Please try again.');
             }
         }
 
-        // Setup event listeners
-        function setupEventListeners() {
-            // Form submission
-            chatForm?.addEventListener('submit', handleSubmit);
-            
-            // Send button click
-            sendButton?.addEventListener('click', (e) => {
-                e.preventDefault();
-                handleSubmit(e);
-            });
-            
-            // Enter key press
-            userInput?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit(e);
-                }
-            });
-            
-            // Category buttons
-            document.querySelectorAll('.filter-button').forEach(button => {
-                button.addEventListener('click', () => {
-                    selectCategory(button.dataset.category);
-                });
-            });
+        function addMessageToChat(sender, message) {
+            const chatBox = document.getElementById('chatBox');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender.toLowerCase()}-message`;
+            messageDiv.textContent = `${sender}: ${message}`;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            setupEventListeners();
-            addChatClickHandler();
-            userInput?.focus();
-            console.log('Chat interface initialized');
-        });
+        // Add welcome message
+        window.onload = () => {
+            addMessageToChat('Assistant', 'Hello! Please select a category above to get started.');
+        };
     </script>
 </body>
 </html> 
